@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.brainsort.twa",
+        "sha256_cert_fingerprints": ["F6:B0:F8:EB:F9:D1:7B:F4:FF:73:AA:4D:6A:3F:4D:5D:51:00:40:8C:C1:AD:0F:16:21:60:87:5E:4E:9A:28:3C"]
+      }
+    }]
