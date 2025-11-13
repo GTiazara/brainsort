@@ -1,0 +1,14 @@
+.gradle/
+.idea/
+.vscode/
+app/
+.DS_Store
+gradle/
+app-release*
+build.gradle
+gradle*
+settings.gradle
+store_icon.png
+manifest-checksum.txt
+twa-manifest.json
+android.keystore
