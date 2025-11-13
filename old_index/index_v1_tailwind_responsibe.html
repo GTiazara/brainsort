@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jeu de Tri de Nombres</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen flex flex-col items-center justify-start bg-gray-50 text-gray-800 p-6">
+
+    <h1 class="text-3xl sm:text-4xl font-bold text-blue-600 mt-4 mb-2">🧠 Jeu de Tri de Nombres</h1>
+    <p class="text-center text-lg mb-4">
+        Clique sur les nombres <strong>dans l’ordre croissant</strong> le plus vite possible !
+    </p>
+
+    <button id="start-btn"
+        class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg transition">
+        Démarrer
+    </button>
+
+    <div id="numbers" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 w-full max-w-md mt-6"></div>
+
+    <div id="message" class="text-center text-xl mt-4 font-medium"></div>
+
+    <script>
+        const numbersContainer = document.getElementById("numbers");
+        const message = document.getElementById("message");
+        const startBtn = document.getElementById("start-btn");
+
+        let numbers = [];
+        let expected = 0;
+        let startTime;
+
+        function startGame() {
+            message.textContent = "";
+            numbersContainer.innerHTML = "";
+            expected = 0;
+
+            const count = 7 + Math.floor(Math.random() * 4);
+            numbers = Array.from({ length: count }, () => Math.floor(Math.random() * 100));
+            const sorted = [...numbers].sort((a, b) => a - b);
+            numbers.sort(() => Math.random() - 0.5);
+
+            numbers.forEach(num => {
+                const btn = document.createElement("button");
+                btn.textContent = num;
+                btn.className = `
+          number w-full text-center bg-white border-2 border-blue-500 text-blue-600
+          rounded-xl py-4 text-2xl font-bold transition active:scale-95
+          hover:bg-blue-500 hover:text-white shadow-sm
+        `;
+                btn.onclick = (event) => checkNumber(event, num, sorted);
+                numbersContainer.appendChild(btn);
+            });
+
+            startTime = Date.now();
+        }
+
+        function checkNumber(event, num, sorted) {
+            if (num === sorted[expected]) {
+                expected++;
+                event.target.classList.add("invisible");
+
+                if (expected === sorted.length) {
+                    const time = ((Date.now() - startTime) / 1000).toFixed(2);
+                    message.innerHTML = `✅ <span class="text-green-600 font-semibold">Bravo !</span> Temps total : <strong>${time}</strong> secondes`;
+                }
+            } else {
+                message.innerHTML = `<span class="text-red-600">❌ Mauvais ordre ! Redémarrage...</span>`;
+                setTimeout(startGame, 1000);
+            }
+        }
+
+        startBtn.addEventListener("click", startGame);
+    </script>
+
+</body>
+
+</html>

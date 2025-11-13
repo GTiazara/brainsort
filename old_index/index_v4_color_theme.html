@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jeu de Tri de Nombres</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body id="body"
+    class="min-h-screen flex flex-col items-center bg-gray-50 text-gray-800 p-6 transition-colors duration-500">
+
+    <h1 class="text-3xl sm:text-4xl font-bold text-blue-600 mt-4 mb-2">🧠 Jeu de Tri de Nombres</h1>
+    <p class="text-center text-lg mb-4">
+        Clique sur les nombres <strong>dans l’ordre correct</strong> le plus vite possible !
+    </p>
+
+    <!-- Settings Panel -->
+    <div id="settings"
+        class="w-full max-w-md bg-white p-4 rounded-xl shadow-md space-y-4 mb-6 transition-colors duration-500">
+        <div>
+            <label class="block font-semibold">Nombre d’éléments :</label>
+            <select id="numCount" class="w-full mt-1 border-gray-300 rounded-md p-2">
+                <option value="random">Aléatoire (7–10)</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block font-semibold">Difficulté :</label>
+            <select id="difficulty" class="w-full mt-1 border-gray-300 rounded-md p-2">
+                <option value="50">Facile (1–50)</option>
+                <option value="100" selected>Moyen (1–100)</option>
+                <option value="999">Difficile (1–999)</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block font-semibold">Ordre à suivre :</label>
+            <select id="order" class="w-full mt-1 border-gray-300 rounded-md p-2">
+                <option value="asc">Croissant</option>
+                <option value="desc">Décroissant</option>
+            </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <input id="showTime" type="checkbox" class="w-4 h-4" checked />
+            <label for="showTime" class="font-semibold">Afficher le chronomètre</label>
+        </div>
+
+        <div>
+            <label class="block font-semibold">Thème / Couleur :</label>
+            <select id="themeMode" class="w-full mt-1 border-gray-300 rounded-md p-2">
+                <option value="light" selected>Light</option>
+                <option value="dark">Dark</option>
+                <option value="random">Random Palette</option>
+            </select>
+        </div>
+
+        <button id="start-btn"
+            class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg w-full transition">
+            Démarrer le jeu
+        </button>
+    </div>
+
+    <!-- Timer -->
+    <div id="timer-container" class="hidden mb-4">
+        <span class="text-lg font-semibold">⏱ Temps : </span>
+        <span id="timer" class="text-2xl font-bold text-blue-600">0.00 s</span>
+    </div>
+
+    <!-- Game Area -->
+    <div id="numbers" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 w-full max-w-md mt-2"></div>
+
+    <!-- Message -->
+    <div id="message" class="text-center text-xl mt-6 font-medium"></div>
+
+    <!-- Result Card -->
+    <div id="result-card"
+        class="hidden mt-6 bg-white shadow-lg rounded-xl p-6 text-center space-y-4 transition-colors duration-500">
+        <div class="text-2xl font-bold text-green-600">✅ Bravo !</div>
+        <div id="final-time" class="text-3xl font-extrabold text-blue-600">0.00 s</div>
+        <div class="flex justify-center gap-4 mt-4">
+            <button id="retry-btn"
+                class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">🔁 Rejouer</button>
+            <button id="back-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg">⚙️
+                Paramètres</button>
+        </div>
+    </div>
+
+    <!-- Optional Sound Effects -->
+    <audio id="click-sound" src="click.wav"></audio>
+    <audio id="success-sound" src="success.wav"></audio>
+
+    <script>
+        const settings = {
+            numCount: document.getElementById("numCount"),
+            difficulty: document.getElementById("difficulty"),
+            order: document.getElementById("order"),
+            showTime: document.getElementById("showTime"),
+            themeMode: document.getElementById("themeMode")
+        };
+
+        const numbersContainer = document.getElementById("numbers");
+        const message = document.getElementById("message");
+        const startBtn = document.getElementById("start-btn");
+        const timerEl = document.getElementById("timer");
+        const timerBox = document.getElementById("timer-container");
+        const resultCard = document.getElementById("result-card");
+        const finalTimeEl = document.getElementById("final-time");
+        const retryBtn = document.getElementById("retry-btn");
+        const backBtn = document.getElementById("back-btn");
+        const body = document.getElementById("body");
+
+        const clickSound = document.getElementById("click-sound");
+        const successSound = document.getElementById("success-sound");
+
+        let numbers = [];
+        let expected = 0;
+        let startTime = null;
+        let sorted = [];
+        let timerInterval = null;
+
+        function startGame() {
+            message.textContent = "";
+            numbersContainer.innerHTML = "";
+            expected = 0;
+            clearInterval(timerInterval);
+            timerInterval = null;
+            resultCard.classList.add("hidden");
+            startTime = null;
+
+            // Apply theme
+            applyTheme(settings.themeMode.value);
+
+            // Get parameters
+            let count = settings.numCount.value === "random" ? 7 + Math.floor(Math.random() * 4) : parseInt(settings.numCount.value);
+            const maxNum = parseInt(settings.difficulty.value);
+            const order = settings.order.value;
+
+            // Generate numbers
+            numbers = Array.from({ length: count }, () => Math.floor(Math.random() * maxNum) + 1);
+            sorted = [...numbers].sort((a, b) => a - b);
+            if (order === "desc") sorted.reverse();
+            numbers.sort(() => Math.random() - 0.5);
+
+            // Render buttons
+            numbers.forEach(num => {
+                const btn = document.createElement("button");
+                btn.textContent = num;
+                btn.className = `
+      number w-full text-center bg-white border-2 border-blue-500 text-blue-600
+      rounded-xl py-4 text-2xl font-bold transition active:scale-95
+      hover:bg-blue-500 hover:text-white shadow-sm
+    `;
+                btn.onclick = (event) => checkNumber(event, num);
+                numbersContainer.appendChild(btn);
+            });
+
+            // Timer
+            if (settings.showTime.checked) {
+                timerBox.classList.remove("hidden");
+                timerEl.textContent = "0.00 s";
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 100);
+            } else {
+                timerBox.classList.add("hidden");
+            }
+
+            settingsPanelVisibility(false);
+        }
+
+        function applyTheme(mode) {
+            if (mode === "light") {
+                body.className = "min-h-screen flex flex-col items-center bg-gray-50 text-gray-800 p-6 transition-colors duration-500";
+            } else if (mode === "dark") {
+                body.className = "min-h-screen flex flex-col items-center bg-gray-900 text-gray-100 p-6 transition-colors duration-500";
+            } else if (mode === "random") {
+                const bg = `bg-[rgb(${Math.floor(Math.random() * 200)},${Math.floor(Math.random() * 200)},${Math.floor(Math.random() * 200)})]`;
+                body.style.backgroundColor = `rgb(${Math.floor(Math.random() * 200)},${Math.floor(Math.random() * 200)},${Math.floor(Math.random() * 200)})`;
+                body.style.color = "white";
+            }
+        }
+
+        function updateTimer() {
+            if (!startTime) return;
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+            timerEl.textContent = `${elapsed} s`;
+        }
+
+        function checkNumber(event, num) {
+            clickSound.play().catch(() => { }); // play click sound
+            if (num === sorted[expected]) {
+                expected++;
+                event.target.classList.add("invisible");
+                if (expected === sorted.length) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    successSound.play().catch(() => { }); // success sound
+                    const time = startTime ? ((Date.now() - startTime) / 1000).toFixed(2) : "0.00";
+                    showResult(time);
+                }
+            } else {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                message.innerHTML = `<span class="text-red-600">❌ Mauvais ordre ! Redémarrage...</span>`;
+                setTimeout(startGame, 1200);
+            }
+        }
+
+        function showResult(time) {
+            timerBox.classList.add("hidden");
+            numbersContainer.innerHTML = "";
+            message.textContent = "";
+            finalTimeEl.textContent = `${time} s`;
+            resultCard.classList.remove("hidden");
+        }
+
+        function settingsPanelVisibility(show) {
+            document.getElementById("settings").style.display = show ? "block" : "none";
+            if (show) timerBox.classList.add("hidden");
+        }
+
+        retryBtn.addEventListener("click", startGame);
+        backBtn.addEventListener("click", () => {
+            resultCard.classList.add("hidden");
+            settingsPanelVisibility(true);
+        });
+        startBtn.addEventListener("click", startGame);
+    </script>
+</body>
+
+</html>

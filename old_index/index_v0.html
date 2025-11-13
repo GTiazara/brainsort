@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jeu de Tri de Nombres</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #f5f7fa;
+            color: #333;
+            margin: 0;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #007bff;
+        }
+
+        #numbers {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .number {
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 15px 25px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .number:hover {
+            background: #007bff;
+            color: white;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+        }
+
+        #start-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin-top: 20px;
+        }
+
+        #start-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧠 Jeu de Tri de Nombres</h1>
+    <p>Clique sur les nombres <strong>dans l’ordre croissant</strong> le plus vite possible !</p>
+    <button id="start-btn">Démarrer</button>
+    <div id="numbers"></div>
+    <div id="message"></div>
+
+    <script>
+        const numbersContainer = document.getElementById('numbers');
+        const message = document.getElementById('message');
+        const startBtn = document.getElementById('start-btn');
+        let numbers = [];
+        let expected = 0;
+        let startTime;
+
+        function startGame() {
+            message.textContent = '';
+            numbersContainer.innerHTML = '';
+            expected = 0;
+            const count = 7 + Math.floor(Math.random() * 4); // entre 7 et 10 nombres
+            numbers = Array.from({ length: count }, () => Math.floor(Math.random() * 100));
+            const sorted = [...numbers].sort((a, b) => a - b);
+            numbers = numbers.sort(() => Math.random() - 0.5); // mélanger
+
+            numbers.forEach(num => {
+                const btn = document.createElement('div');
+                btn.className = 'number';
+                btn.textContent = num;
+                btn.onclick = () => checkNumber(num, sorted);
+                numbersContainer.appendChild(btn);
+            });
+            startTime = Date.now();
+        }
+
+        function checkNumber(num, sorted) {
+            if (num === sorted[expected]) {
+                expected++;
+                event.target.style.visibility = 'hidden';
+                if (expected === sorted.length) {
+                    const time = ((Date.now() - startTime) / 1000).toFixed(2);
+                    message.textContent = `✅ Bravo ! Temps total : ${time} secondes`;
+                }
+            } else {
+                message.textContent = '❌ Mauvais ordre ! Essaie encore.';
+                setTimeout(startGame, 1000);
+            }
+        }
+
+        startBtn.onclick = startGame;
+    </script>
+</body>
+
+</html>
