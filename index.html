@@ -62,6 +62,64 @@
     <span class="ml-2 text-sm sm:text-base" id="orderLabel">Ascendant</span>
   </div>
 
+  <!-- Odd -> Even Sequence Toggle -->
+  <div class="flex items-center justify-between mt-3">
+    <div>
+      <span class="text-sm sm:text-base font-semibold">Séquence spéciale</span>
+      <div class="text-xs text-gray-500">Cliquez d'abord tous les <strong>impairs</strong>, puis les <strong>pairs</strong></div>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="oddEvenToggle" class="sr-only peer">
+      <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-all duration-300"></div>
+      <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+    </label>
+  </div>
+
+  <!-- Special sequence mode selector (visible when Séquence spéciale is active) -->
+  <div id="oddEvenModeContainer" class="mt-2 hidden">
+    <label class="block text-sm font-semibold mb-1">Mode de séquence</label>
+    <div class="flex gap-3 items-center text-sm">
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="oddEvenMode" id="oddEvenMode_oddsThenEvens" value="oddsThenEvens" class="sr-only peer">
+        <span class="px-3 py-1 rounded-md bg-gray-100 peer-checked:bg-purple-500 peer-checked:text-white">Impairs → Pairs</span>
+      </label>
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="oddEvenMode" id="oddEvenMode_alternate" value="alternate" class="sr-only peer">
+        <span class="px-3 py-1 rounded-md bg-gray-100 peer-checked:bg-purple-500 peer-checked:text-white">Alterné (impair/pair)</span>
+      </label>
+    </div>
+
+    <!-- Start parity selector (only meaningful for alternate mode) -->
+    <div id="oddEvenStartContainer" class="mt-3 hidden">
+      <label class="block text-sm font-semibold mb-1">Commencer par</label>
+      <div class="flex gap-3 items-center text-sm">
+        <label class="inline-flex items-center gap-2">
+          <input type="radio" name="oddEvenStart" id="oddEvenStart_odd" value="odd" class="sr-only peer">
+          <span class="px-3 py-1 rounded-md bg-gray-100 peer-checked:bg-teal-500 peer-checked:text-white">Impair</span>
+        </label>
+        <label class="inline-flex items-center gap-2">
+          <input type="radio" name="oddEvenStart" id="oddEvenStart_even" value="even" class="sr-only peer">
+          <span class="px-3 py-1 rounded-md bg-gray-100 peer-checked:bg-teal-500 peer-checked:text-white">Pair</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invert Pairs Order (only meaningful when Séquence spéciale enabled) -->
+  <div id="invertPairsContainer" class="mt-2 hidden">
+    <div class="flex items-center justify-between">
+      <div>
+        <span class="text-sm sm:text-base font-semibold">Ordre des pairs</span>
+        <div class="text-xs text-gray-500">Si activé, les nombres pairs utilisent l'ordre inverse des impairs.</div>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="invertPairsToggle" class="sr-only peer">
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-pink-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+  </div>
+
   <!-- Theme -->
   <div>
     <h3 class="font-semibold mb-2 text-sm sm:text-base">Thème / Couleur</h3>
@@ -107,6 +165,19 @@
     </label>
   </div>
 
+  <!-- Helper badge toggle -->
+  <div class="flex items-center justify-between mt-3">
+    <div>
+      <span class="text-sm sm:text-base font-semibold">Aide visuelle</span>
+      <div class="text-xs text-gray-500">Afficher le badge et surligner le prochain nombre</div>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="helperToggle" class="sr-only peer" checked>
+      <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-teal-500 transition-all duration-300"></div>
+      <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+    </label>
+  </div>
+
   <button id="start-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg text-sm sm:text-base transition">
     Démarrer le jeu
   </button>
@@ -123,6 +194,11 @@
 
 <!-- Message -->
 <div id="message" class="text-center text-xl mt-6 font-medium"></div>
+
+<!-- Next expected badge (hidden by default) -->
+<div id="next-badge" class="hidden mt-2 text-center">
+  <span class="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold shadow-sm">Prochain: <strong id="next-number" class="ml-2">0</strong></span>
+</div>
 
 <!-- Result Card -->
 <div id="result-card" class="hidden mt-6 bg-white shadow-lg rounded-xl p-6 text-center space-y-4 transition-colors duration-500">
@@ -176,12 +252,22 @@ const settings = document.getElementById("settings");
 const instruction = document.querySelector("p");
 const orderToggle = document.getElementById("orderToggle");
 const orderLabel = document.getElementById("orderLabel");
+const oddEvenToggle = document.getElementById("oddEvenToggle");
+const invertPairsToggle = document.getElementById("invertPairsToggle");
 const clickSound = document.getElementById("click-sound");
 const successSound = document.getElementById("success-sound");
 const failSound = document.getElementById("fail-sound");
 const soundToggle = document.getElementById("soundToggle");
 const challengeCheckbox = document.getElementById("challengeMode");
 const challengeTimeContainer = document.getElementById("challengeTimeContainer");
+const nextBadge = document.getElementById("next-badge");
+const nextNumberEl = document.getElementById("next-number");
+const helperToggle = document.getElementById("helperToggle");
+const oddEvenModeSelect = null; // replaced by radio buttons
+const oddEvenModeRadioOdds = document.getElementById('oddEvenMode_oddsThenEvens');
+const oddEvenModeRadioAlt = document.getElementById('oddEvenMode_alternate');
+const oddEvenStartRadioOdd = document.getElementById('oddEvenStart_odd');
+const oddEvenStartRadioEven = document.getElementById('oddEvenStart_even');
 
 /* ---------- State ---------- */
 let selectedNum = "random";
@@ -191,7 +277,86 @@ let ascendingOrder = true;
 let isChallenge = false;
 let remainingTime = 0;
 let soundEnabled = true;
+let oddEvenMode = false;
+let invertPairs = false;
+let helperEnabled = true;
+let oddEvenModeType = 'oddsThenEvens';
+let oddEvenStart = 'odd';
 let numbers = [], sorted = [], expected = 0, timerInterval = null, startTime = null;
+
+/* ---------- Preferences persistence (single JSON object) ---------- */
+function savePrefs(){
+  try{
+    const prefs = {
+      helperEnabled: !!helperEnabled,
+      oddEvenMode: !!oddEvenMode,
+      invertPairs: !!invertPairs,
+      oddEvenModeType: oddEvenModeType || 'oddsThenEvens',
+      oddEvenStart: oddEvenStart || 'odd',
+      ascendingOrder: !!ascendingOrder,
+      selectedTheme: selectedTheme || "light",
+      selectedDiff: selectedDiff || 100,
+      selectedNum: selectedNum || "7"
+    };
+    localStorage.setItem('brainSortPrefs', JSON.stringify(prefs));
+  }catch(e){ /* ignore storage errors */ }
+}
+
+function loadPrefs(){
+  try{
+    const raw = localStorage.getItem('brainSortPrefs');
+    if(!raw) return;
+    const prefs = JSON.parse(raw);
+    if(typeof prefs.helperEnabled !== 'undefined') helperEnabled = !!prefs.helperEnabled;
+    if(typeof prefs.oddEvenMode !== 'undefined') oddEvenMode = !!prefs.oddEvenMode;
+    if(typeof prefs.invertPairs !== 'undefined') invertPairs = !!prefs.invertPairs;
+  if(typeof prefs.oddEvenModeType !== 'undefined') oddEvenModeType = prefs.oddEvenModeType;
+  if(typeof prefs.oddEvenStart !== 'undefined') oddEvenStart = prefs.oddEvenStart;
+    if(typeof prefs.ascendingOrder !== 'undefined') ascendingOrder = !!prefs.ascendingOrder;
+    if(typeof prefs.selectedTheme === 'string') selectedTheme = prefs.selectedTheme;
+    if(typeof prefs.selectedDiff !== 'undefined') selectedDiff = prefs.selectedDiff;
+    if(typeof prefs.selectedNum === 'string' || typeof prefs.selectedNum === 'number') selectedNum = String(prefs.selectedNum);
+
+    // Apply UI state to controls
+    helperToggle.checked = !!helperEnabled;
+    oddEvenToggle.checked = !!oddEvenMode;
+    invertPairsToggle.checked = !!invertPairs;
+    orderToggle.checked = !!ascendingOrder;
+    orderLabel.textContent = ascendingOrder ? "Ascendant" : "Descendant";
+
+    // show/hide invert container
+    const invertContainer = document.getElementById("invertPairsContainer");
+  if(invertContainer) invertContainer.style.display = oddEvenMode ? "block" : "none";
+  // show/hide mode selector
+  const modeContainer = document.getElementById("oddEvenModeContainer");
+  if(modeContainer) modeContainer.style.display = oddEvenMode ? "block" : "none";
+  // set radio states for mode
+  if(oddEvenModeRadioOdds) oddEvenModeRadioOdds.checked = (oddEvenModeType === 'oddsThenEvens');
+  if(oddEvenModeRadioAlt) oddEvenModeRadioAlt.checked = (oddEvenModeType === 'alternate');
+  // show/hide start parity and set its radios
+  const startContainer = document.getElementById('oddEvenStartContainer');
+  if(startContainer) startContainer.style.display = (oddEvenMode && oddEvenModeType === 'alternate') ? 'block' : 'none';
+  if(oddEvenStartRadioOdd) oddEvenStartRadioOdd.checked = (oddEvenStart === 'odd');
+  if(oddEvenStartRadioEven) oddEvenStartRadioEven.checked = (oddEvenStart === 'even');
+
+    // restore selected number button styling
+    document.querySelectorAll(".option-btn").forEach(b=>b.classList.remove("ring-2","ring-blue-500"));
+    const numBtn = Array.from(document.querySelectorAll('.option-btn')).find(b => b.textContent.trim() === selectedNum);
+    if(numBtn) numBtn.classList.add("ring-2","ring-blue-500");
+
+    // restore difficulty styling
+    document.querySelectorAll(".difficulty-btn").forEach(b=>b.classList.remove("ring-2","ring-blue-500"));
+    const diffText = selectedDiff === 50 ? "Facile" : selectedDiff === 100 ? "Moyen" : "Difficile";
+    const diffBtn = Array.from(document.querySelectorAll('.difficulty-btn')).find(b => b.textContent.trim() === diffText);
+    if(diffBtn) diffBtn.classList.add("ring-2","ring-blue-500");
+
+    // restore theme styling
+    document.querySelectorAll(".theme-card").forEach(c=>c.classList.remove("ring-4","ring-blue-500"));
+    const themeCard = Array.from(document.querySelectorAll('.theme-card')).find(c => c.textContent.trim().toLowerCase() === selectedTheme);
+    if(themeCard) themeCard.classList.add("ring-4","ring-blue-500");
+
+  }catch(e){ /* ignore parse errors */ }
+}
 
 /* ---------- Sound toggle ---------- */
 soundToggle.addEventListener("change", () => { soundEnabled = soundToggle.checked; });
@@ -202,6 +367,7 @@ document.querySelectorAll(".option-btn").forEach(btn=>{
     document.querySelectorAll(".option-btn").forEach(b=>b.classList.remove("ring-2","ring-blue-500"));
     btn.classList.add("ring-2","ring-blue-500");
     selectedNum = btn.textContent.trim()==="🎲 Random" ? "random" : btn.textContent.trim();
+    savePrefs();
   });
 });
 
@@ -210,6 +376,7 @@ document.querySelectorAll(".difficulty-btn").forEach(btn=>{
     document.querySelectorAll(".difficulty-btn").forEach(b=>b.classList.remove("ring-2","ring-blue-500"));
     btn.classList.add("ring-2","ring-blue-500");
     selectedDiff = btn.textContent.trim()==="Facile" ? 50 : btn.textContent.trim()==="Moyen" ? 100 : 999;
+    savePrefs();
   });
 });
 
@@ -219,6 +386,7 @@ document.querySelectorAll(".theme-card").forEach(card=>{
     card.classList.add("ring-4","ring-blue-500");
     selectedTheme = card.textContent.trim().toLowerCase();
     applyTheme(selectedTheme);
+    savePrefs();
   });
 });
 
@@ -228,10 +396,96 @@ challengeCheckbox.addEventListener("change", ()=> {
 });
 
 /* ---------- Order toggle ---------- */
+function updateInstruction(){
+  if(oddEvenMode){
+    const oddOrder = ascendingOrder ? "ascendant" : "descendant";
+    const evenOrder = (invertPairs ? !ascendingOrder : ascendingOrder) ? "ascendant" : "descendant";
+    if(oddEvenModeType === 'oddsThenEvens'){
+      instruction.innerHTML = `Clique sur les nombres <strong>impairs</strong> dans l’ordre ${oddOrder}, puis les <strong>pairs</strong> dans l’ordre ${evenOrder} !`;
+    } else {
+      instruction.innerHTML = `Clique alternativement <strong>impair</strong> puis <strong>pair</strong> (impair ${oddOrder}, pair ${evenOrder}) !`;
+    }
+  } else {
+    instruction.innerHTML = `Clique sur les nombres <strong>dans l’ordre ${ascendingOrder ? "ascendant" : "descendant"}</strong> le plus vite possible !`;
+  }
+}
+
 orderToggle.addEventListener("change", ()=>{
   ascendingOrder = orderToggle.checked;
   orderLabel.textContent = ascendingOrder ? "Ascendant" : "Descendant";
-  instruction.innerHTML = `Clique sur les nombres <strong>dans l’ordre ${ascendingOrder ? "ascendant" : "descendant"}</strong> le plus vite possible !`;
+  updateInstruction();
+  savePrefs();
+});
+
+oddEvenToggle.addEventListener("change", ()=>{
+  oddEvenMode = oddEvenToggle.checked;
+  // show/hide the invert-pairs control when oddEvenMode toggles
+  const invertContainer = document.getElementById("invertPairsContainer");
+  if(invertContainer) invertContainer.style.display = oddEvenMode ? "block" : "none";
+  const modeContainer = document.getElementById("oddEvenModeContainer");
+  if(modeContainer) modeContainer.style.display = oddEvenMode ? "block" : "none";
+  // show/hide start parity when switching off/on
+  const startContainer = document.getElementById('oddEvenStartContainer');
+  if(startContainer) startContainer.style.display = (oddEvenMode && oddEvenModeType === 'alternate') ? 'block' : 'none';
+  updateInstruction();
+  savePrefs();
+});
+
+invertPairsToggle.addEventListener("change", ()=>{
+  invertPairs = invertPairsToggle.checked;
+  updateInstruction();
+  savePrefs();
+});
+
+// odd/even mode radios
+if(oddEvenModeRadioOdds){
+  oddEvenModeRadioOdds.addEventListener('change', ()=>{
+    if(oddEvenModeRadioOdds.checked){
+      oddEvenModeType = 'oddsThenEvens';
+      const startContainer = document.getElementById('oddEvenStartContainer');
+      if(startContainer) startContainer.style.display = 'none';
+      updateInstruction();
+      savePrefs();
+    }
+  });
+}
+if(oddEvenModeRadioAlt){
+  oddEvenModeRadioAlt.addEventListener('change', ()=>{
+    if(oddEvenModeRadioAlt.checked){
+      oddEvenModeType = 'alternate';
+      const startContainer = document.getElementById('oddEvenStartContainer');
+      if(startContainer) startContainer.style.display = 'block';
+      updateInstruction();
+      savePrefs();
+    }
+  });
+}
+
+// start parity radios
+if(oddEvenStartRadioOdd){
+  oddEvenStartRadioOdd.addEventListener('change', ()=>{
+    if(oddEvenStartRadioOdd.checked){ oddEvenStart = 'odd'; savePrefs(); updateInstruction(); }
+  });
+}
+if(oddEvenStartRadioEven){
+  oddEvenStartRadioEven.addEventListener('change', ()=>{
+    if(oddEvenStartRadioEven.checked){ oddEvenStart = 'even'; savePrefs(); updateInstruction(); }
+  });
+}
+
+helperToggle.addEventListener("change", ()=>{
+  helperEnabled = helperToggle.checked;
+  if(!helperEnabled){
+    hideNextBadge();
+    highlightExpected(false);
+  } else {
+    // if a game is in progress, show hint for current expected
+    if(helperEnabled && expected < sorted.length){
+      showNextBadge(sorted[expected]);
+      highlightExpected(true);
+    }
+  }
+  savePrefs();
 });
 
 /* ---------- Start/retry/back ---------- */
@@ -249,6 +503,10 @@ function startGame(){
   settings.style.display = "none";
   applyTheme(selectedTheme);
 
+  // hide next badge and clear highlights at game start
+  hideNextBadge();
+  highlightExpected(false);
+
   ascendingOrder = orderToggle.checked;
   isChallenge = challengeCheckbox.checked;
   remainingTime = isChallenge ? parseInt(document.getElementById("challengeTime").value || "30") : 0;
@@ -257,8 +515,40 @@ function startGame(){
 
   let count = (selectedNum==="random") ? 7 + Math.floor(Math.random()*4) : parseInt(selectedNum) || 7;
   numbers = Array.from({length: count}, ()=> Math.floor(Math.random()*selectedDiff)+1);
-  sorted = [...numbers].sort((a,b)=>a-b);
-  if(!ascendingOrder) sorted.reverse();
+
+  // Build the expected sequence depending on Odd→Even mode and ascending/descending
+  if(oddEvenMode){
+    if(oddEvenModeType === 'oddsThenEvens'){
+      // Sort odds and evens separately according to ascendingOrder
+      const odds = numbers.filter(n => n % 2 !== 0).sort((a,b)=> ascendingOrder ? a-b : b-a);
+      const evensSortAsc = invertPairs ? !ascendingOrder : ascendingOrder;
+      const evens = numbers.filter(n => n % 2 === 0).sort((a,b)=> evensSortAsc ? a-b : b-a);
+      sorted = odds.concat(evens);
+    } else {
+      // alternate mode: build odds and evens queues then alternate picks starting with configured parity
+      const odds = numbers.filter(n => n % 2 !== 0).sort((a,b)=> ascendingOrder ? a-b : b-a);
+      const evensSortAsc = invertPairs ? !ascendingOrder : ascendingOrder;
+      const evens = numbers.filter(n => n % 2 === 0).sort((a,b)=> evensSortAsc ? a-b : b-a);
+      const result = [];
+      let i = 0, j = 0;
+      // choose starting side based on oddEvenStart
+      let turn = (oddEvenStart === 'even') ? 'even' : 'odd';
+      while(i < odds.length || j < evens.length){
+        if(turn === 'odd'){
+          if(i < odds.length){ result.push(odds[i++]); }
+          else if(j < evens.length){ result.push(evens[j++]); }
+          turn = 'even';
+        } else {
+          if(j < evens.length){ result.push(evens[j++]); }
+          else if(i < odds.length){ result.push(odds[i++]); }
+          turn = 'odd';
+        }
+      }
+      sorted = result;
+    }
+  } else {
+    sorted = [...numbers].sort((a,b)=> ascendingOrder ? a-b : b-a);
+  }
   numbers.sort(()=>Math.random()-0.5);
 
   numbersContainer.style.gridTemplateColumns = "repeat(auto-fit, minmax(60px,1fr))";
@@ -269,6 +559,15 @@ function startGame(){
     btn.addEventListener("click", ()=> checkNumber(btn, num));
     numbersContainer.appendChild(btn);
   });
+
+  // When numbers are rendered, update the next badge for the first expected number
+  if(helperEnabled && expected < sorted.length){
+    showNextBadge(sorted[expected]);
+    highlightExpected(true);
+  } else {
+    hideNextBadge();
+    highlightExpected(false);
+  }
 
   if(showTime){
     if(isChallenge) startChallengeTimer();
@@ -281,6 +580,19 @@ function checkNumber(btn,num){
   if(num === sorted[expected]){
     expected++;
     btn.classList.add("invisible");
+    // update next badge to the next expected number (if any)
+    if(helperEnabled){
+      if(expected < sorted.length){
+        showNextBadge(sorted[expected]);
+        highlightExpected(true);
+      } else {
+        hideNextBadge();
+        highlightExpected(false);
+      }
+    } else {
+      hideNextBadge();
+      highlightExpected(false);
+    }
     if(expected === sorted.length){
       clearInterval(timerInterval); timerInterval = null;
       if (soundEnabled) successSound.play().catch(()=>{});
@@ -291,6 +603,11 @@ function checkNumber(btn,num){
     clearInterval(timerInterval); timerInterval = null;
     if (soundEnabled) failSound.play().catch(()=>{});
     message.innerHTML = '<span class="text-red-600">❌ Mauvais ordre ! Redémarrage...</span>';
+    // On failure: show the next expected number as a badge and highlight it
+    if(expected < sorted.length){
+      showNextBadge(sorted[expected]);
+      highlightExpected(true);
+    }
     setTimeout(startGame,1200);
   }
 }
@@ -321,6 +638,29 @@ function failGame(){
   if (soundEnabled) failSound.play().catch(()=>{});
   message.innerHTML = '<span class="text-red-600 font-bold">⏰ Temps écoulé ! Vous avez perdu.</span>';
   numbersContainer.innerHTML = "";
+}
+
+/* ---------- Next badge & highlight helpers ---------- */
+function showNextBadge(val){
+  if(!nextBadge || !nextNumberEl) return;
+  nextNumberEl.textContent = val;
+  nextBadge.classList.remove("hidden");
+}
+
+function hideNextBadge(){
+  if(!nextBadge) return;
+  nextBadge.classList.add("hidden");
+}
+
+function highlightExpected(enable){
+  const btns = document.querySelectorAll(".number");
+  btns.forEach(b=>{
+    const n = parseInt(b.textContent,10);
+    b.classList.remove("ring-4","ring-yellow-400","animate-pulse");
+    if(enable && expected < sorted.length && n === sorted[expected]){
+      b.classList.add("ring-4","ring-yellow-400","animate-pulse");
+    }
+  });
 }
 
 /* ---------- Timer helpers ---------- */
@@ -417,6 +757,10 @@ function applyTheme(mode){
 document.querySelectorAll(".option-btn").forEach(b=>{ if(b.textContent.trim() === "7"){ b.classList.add("ring-2","ring-blue-500"); selectedNum = "7"; }});
 document.querySelectorAll(".difficulty-btn").forEach(b=>{ if(b.textContent.trim() === "Facile"){ b.classList.add("ring-2","ring-blue-500"); selectedDiff = 50; }});
 document.querySelectorAll(".theme-card").forEach(c=>{ if(c.textContent.trim().toLowerCase() === "light"){ c.classList.add("ring-4","ring-blue-500"); selectedTheme = "light"; }});
+
+// Load persisted preferences (if any) and update instruction/theme
+loadPrefs();
+updateInstruction();
 applyTheme(selectedTheme);
 </script>
 </body>
