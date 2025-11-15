@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BrainSort — Alphabet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="shared.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+</head>
+<body id="body" class="min-h-screen flex flex-col items-center bg-gray-50 text-gray-800 p-4 sm:p-6 transition-colors duration-500">
+  <h1 class="text-3xl sm:text-4xl font-bold text-purple-600 mt-4 mb-2 text-center">🔤 BrainSort — Alphabet</h1>
+  <p class="text-center text-sm sm:text-base mb-4" id="instruction">Clique sur les lettres <strong>dans l'ordre A → Z</strong> le plus vite possible !</p>
+
+  <div id="settings" class="w-full max-w-md bg-white p-4 rounded-xl shadow-md space-y-4">
+    <div>
+      <h3 class="font-semibold mb-2">Nombre de lettres</h3>
+      <div class="flex gap-2">
+        <button class="alpha-count option-btn flex-1 py-2 rounded bg-gray-200">5</button>
+        <button class="alpha-count option-btn flex-1 py-2 rounded bg-gray-200">7</button>
+        <button class="alpha-count option-btn flex-1 py-2 rounded bg-gray-200">10</button>
+        <button class="alpha-count option-btn flex-1 py-2 rounded bg-gray-200">🎲 Random</button>
+      </div>
+    </div>
+
+    <div>
+      <h3 class="font-semibold mb-2">Casse</h3>
+      <div class="flex gap-2">
+        <button class="case-btn flex-1 py-2 rounded bg-gray-100">Majuscules</button>
+        <button class="case-btn flex-1 py-2 rounded bg-gray-100">Minuscules</button>
+        <button class="case-btn flex-1 py-2 rounded bg-gray-100">Mixte</button>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <span class="font-semibold">Ordre</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="alphaOrder" class="sr-only peer" checked>
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-purple-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+      <span id="alphaOrderLabel" class="ml-2">A → Z</span>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <span class="font-semibold">Mode Challenge</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="alphaChallenge" class="sr-only peer">
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-red-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+
+    <div id="alphaChallengeTime" class="hidden">
+      <label class="block font-semibold">Temps limite (s)</label>
+      <input id="alphaChallengeSeconds" type="number" min="5" max="120" value="30" class="w-full rounded border p-2"/>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <span class="font-semibold">Afficher Timer</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="alphaShowTime" class="sr-only peer" checked>
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <span class="font-semibold">Sons</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="alphaSound" class="sr-only peer" checked>
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-indigo-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+
+    <button id="alphaStart" class="w-full bg-purple-600 text-white py-2 rounded-lg">Démarrer</button>
+  </div>
+
+  <div id="timer-container" class="hidden mt-4">
+    <span>⏱ </span><span id="alpha-timer" class="text-xl font-bold">0.00 s</span>
+  </div>
+
+  <div id="letters" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 w-full max-w-md mt-4"></div>
+
+  <div id="alpha-message" class="text-center mt-4"></div>
+
+  <div id="alpha-result" class="hidden mt-4 bg-white p-4 rounded shadow text-center">
+    <div id="alpha-final-time" class="text-2xl font-bold"></div>
+    <div id="alpha-score" class="mt-2 text-lg text-indigo-600"></div>
+    <div class="mt-4 flex justify-center gap-3">
+      <button id="alpha-retry" class="px-4 py-2 bg-indigo-500 text-white rounded">Rejouer</button>
+      <button id="alpha-back" class="px-4 py-2 bg-gray-300 rounded">⚙️ Paramètres</button>
+      <a href="index.html" class="px-4 py-2 bg-gray-200 rounded">Accueil</a>
+    </div>
+  </div>
+
+  
+  <audio id="click-snd" src="sounds/click.wav" preload="auto"></audio>
+  <audio id="success-snd" src="sounds/success.wav" preload="auto"></audio>
+  <audio id="fail-snd" src="sounds/fail.wav" preload="auto"></audio>
+
+  <!-- Footer -->
+<footer class="w-full max-w-md text-center mx-auto mt-6 text-sm text-gray-600">
+  <a href="/privacy.html" class="text-blue-600 hover:underline">Politique de confidentialité</a>
+  <span class="mx-2">•</span>
+  <a href="/" class="text-blue-600 hover:underline">Retour</a>
+</footer>
+
+<script>
+/* Alphabet game script */
+const lettersContainer = document.getElementById('letters');
+const alphaStart = document.getElementById('alphaStart');
+const alphaCountBtns = document.querySelectorAll('.alpha-count');
+const caseBtns = document.querySelectorAll('.case-btn');
+const alphaOrder = document.getElementById('alphaOrder');
+const alphaOrderLabel = document.getElementById('alphaOrderLabel');
+const alphaShowTime = document.getElementById('alphaShowTime');
+const alphaTimerBox = document.getElementById('timer-container');
+const alphaTimer = document.getElementById('alpha-timer');
+const alphaChallenge = document.getElementById('alphaChallenge');
+const alphaChallengeTime = document.getElementById('alphaChallengeTime');
+const alphaChallengeSeconds = document.getElementById('alphaChallengeSeconds');
+const alphaSound = document.getElementById('alphaSound');
+const clickSnd = document.getElementById('click-snd');
+const successSnd = document.getElementById('success-snd');
+const failSnd = document.getElementById('fail-snd');
+const alphaMessage = document.getElementById('alpha-message');
+const alphaResult = document.getElementById('alpha-result');
+const alphaFinalTime = document.getElementById('alpha-final-time');
+const alphaScore = document.getElementById('alpha-score');
+const alphaRetry = document.getElementById('alpha-retry');
+
+let alphaCount = 7;
+let alphaCase = 'upper';
+let alphaAscending = true;
+let alphaTimerInterval = null;
+let alphaStartTime = null;
+let alphaRemaining = 0;
+let alphaSorted = [];
+let alphaExpected = 0;
+
+alphaCountBtns.forEach(b=>{
+  b.addEventListener('click', ()=> {
+    alphaCountBtns.forEach(x=>x.classList.remove('ring-2','ring-indigo-500'));
+    b.classList.add('ring-2','ring-indigo-500');
+    const t = b.textContent.trim();
+    alphaCount = t === '🎲 Random' ? 5 + Math.floor(Math.random()*6) : parseInt(t);
+  });
+});
+caseBtns.forEach(b=>{
+  b.addEventListener('click', ()=> {
+    caseBtns.forEach(x=>x.classList.remove('ring-2','ring-indigo-500'));
+    b.classList.add('ring-2','ring-indigo-500');
+    const t = b.textContent.trim();
+    alphaCase = t === 'Majuscules' ? 'upper' : t === 'Minuscules' ? 'lower' : 'mixed';
+  });
+});
+
+alphaOrder.addEventListener('change', ()=>{
+  alphaAscending = alphaOrder.checked;
+  alphaOrderLabel.textContent = alphaAscending ? 'A → Z' : 'Z → A';
+});
+
+alphaChallenge.addEventListener('change', ()=>{
+  alphaChallengeTime.style.display = alphaChallenge.checked ? 'block' : 'none';
+});
+
+function lettersPool() {
+  const base = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  return base;
+}
+
+function makeLetters(n){
+  const pool = lettersPool();
+  const pick = [];
+  while(pick.length < n && pool.length){
+    const idx = Math.floor(Math.random()*pool.length);
+    pick.push(pool.splice(idx,1)[0]);
+  }
+  return pick;
+}
+
+function renderLetters(arr){
+  lettersContainer.innerHTML = '';
+  arr.forEach(l=>{
+    const btn = document.createElement('button');
+    btn.className = 'w-full text-center bg-white border-2 border-indigo-500 text-indigo-600 rounded-xl py-4 text-2xl font-bold transition active:scale-95 hover:bg-indigo-500 hover:text-white shadow-sm';
+    btn.textContent = (alphaCase === 'upper' ? l.toUpperCase() : alphaCase === 'lower' ? l : (Math.random()>0.5?l.toUpperCase():l));
+    btn.addEventListener('click', ()=> alphaCheck(btn, l));
+    lettersContainer.appendChild(btn);
+  });
+}
+
+function startAlpha(){
+  alphaMessage.textContent = '';
+  alphaResult.classList.add('hidden');
+  alphaExpected = 0;
+  clearInterval(alphaTimerInterval);
+  alphaTimerInterval = null;
+  alphaStartTime = null;
+
+  // hide the settings panel when the round starts (like numbers game)
+  const settings = document.getElementById('settings');
+  if(settings) settings.style.display = 'none';
+
+  const showTime = alphaChallenge.checked || alphaShowTime.checked;
+  alphaTimerBox.classList.toggle('hidden', !showTime);
+
+  const count = alphaCount;
+  const pool = makeLetters(count);
+  alphaSorted = [...pool].sort((a,b)=> alphaAscending ? a.localeCompare(b) : b.localeCompare(a));
+  pool.sort(()=>Math.random()-0.5);
+  renderLetters(pool);
+
+  if(alphaShowTime.checked || alphaChallenge.checked){
+    if(alphaChallenge.checked){
+      alphaRemaining = parseInt(alphaChallengeSeconds.value) || 30;
+      alphaTimer.textContent = alphaRemaining.toFixed(2) + ' s';
+      alphaTimerInterval = setInterval(()=>{
+        alphaRemaining -= 0.1;
+        if(alphaRemaining <= 0){ alphaRemaining = 0; clearInterval(alphaTimerInterval); alphaFail(); }
+        alphaTimer.textContent = alphaRemaining.toFixed(2) + ' s';
+      },100);
+    } else {
+      alphaStartTime = Date.now();
+      alphaTimerInterval = setInterval(()=> {
+        alphaTimer.textContent = ((Date.now()-alphaStartTime)/1000).toFixed(2)+' s';
+      },100);
+    }
+  }
+}
+
+function alphaCheck(btn, letter){
+  if(alphaSound.checked) { clickSnd.currentTime=0; clickSnd.play().catch(()=>{}); }
+  if(letter === alphaSorted[alphaExpected]){
+    alphaExpected++;
+    btn.classList.add('invisible');
+    if(alphaExpected === alphaSorted.length){
+      clearInterval(alphaTimerInterval); alphaTimerInterval=null;
+      if(alphaSound.checked) successSnd.play().catch(()=>{});
+      const t = alphaChallenge.checked ? (parseFloat(alphaChallengeSeconds.value)-alphaRemaining).toFixed(2) : ((Date.now()-alphaStartTime)/1000).toFixed(2);
+      alphaWin(t);
+    }
+  } else {
+    clearInterval(alphaTimerInterval); alphaTimerInterval=null;
+    if(alphaSound.checked) failSnd.play().catch(()=>{});
+    alphaMessage.innerHTML = '<span class="text-red-600">❌ Mauvaise lettre — recommence !</span>';
+    setTimeout(startAlpha, 900);
+  }
+}
+
+function alphaWin(time){
+  alphaResult.classList.remove('hidden');
+  alphaFinalTime.textContent = `${parseFloat(time)} s`;
+  alphaScore.textContent = `Lettre(s): ${alphaSorted.length}`;
+}
+
+alphaStart.addEventListener('click', startAlpha);
+alphaRetry.addEventListener('click', startAlpha);
+
+// allow returning to settings from result (Paramètres)
+const alphaBack = document.getElementById('alpha-back');
+if(alphaBack){
+  alphaBack.addEventListener('click', ()=>{
+    alphaResult.classList.add('hidden');
+    const settings = document.getElementById('settings');
+    if(settings) settings.style.display = 'block';
+    // scroll to top so settings are visible
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+// defaults
+document.querySelectorAll('.alpha-count').forEach(b=>{ if(b.textContent.trim()==='7'){ b.classList.add('ring-2','ring-indigo-500'); }});
+document.querySelectorAll('.case-btn').forEach(b=>{ if(b.textContent.trim()==='Majuscules'){ b.classList.add('ring-2','ring-indigo-500'); }});
+
+// Load shared prefs if shared module is present
+if(window.brainSort && typeof window.brainSort.loadPrefsObj === 'function' && typeof window.brainSort.applyCommonPrefsToPage === 'function'){
+  const prefs = window.brainSort.loadPrefsObj();
+  if(prefs){ window.brainSort.applyCommonPrefsToPage(prefs); }
+}
+</script>
+</body>
+</html>
