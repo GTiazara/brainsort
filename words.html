@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BrainSort — Mots</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+  <meta name="theme-color" content="#2563eb" />
+</head>
+<body class="min-h-screen flex flex-col items-center bg-gray-50 text-gray-800 p-4 sm:p-6 transition-colors duration-500">
+
+<h1 id="game-header" class="text-3xl sm:text-4xl font-bold text-blue-600 mt-4 mb-2 text-center">🧠 BrainSort — Mots</h1>
+<p class="text-center text-sm sm:text-base mb-4">Cliquez sur les mots en respectant l'ordre alphabétique par thématique.</p>
+
+<!-- Settings -->
+<div id="settings" class="w-full max-w-md bg-white p-4 sm:p-6 rounded-xl shadow-md space-y-4">
+
+  <div>
+    <label class="block font-semibold mb-1">Difficulté (mots par thématique)</label>
+    <div class="flex gap-2">
+      <button class="diff-btn flex-1 py-2 rounded bg-green-200 text-green-800">Facile (3)</button>
+      <button class="diff-btn flex-1 py-2 rounded bg-yellow-200 text-yellow-800">Moyen (5)</button>
+      <button class="diff-btn flex-1 py-2 rounded bg-red-200 text-red-800">Difficile (8)</button>
+    </div>
+  </div>
+
+  <div>
+    <label class="block font-semibold mb-1">Ordre alphabétique interne</label>
+    <div class="flex items-center gap-3">
+      <label class="inline-flex items-center gap-2">
+        <input type="checkbox" id="ascendingOrder" class="sr-only peer" checked>
+        <span class="px-3 py-1 rounded bg-gray-100 peer-checked:bg-blue-500 peer-checked:text-white">Ascendant</span>
+      </label>
+      <label class="inline-flex items-center gap-2">
+        <input type="checkbox" id="invertSecond" class="sr-only peer">
+        <span class="px-3 py-1 rounded bg-gray-100 peer-checked:bg-pink-500 peer-checked:text-white">Inverser 2ème thématique</span>
+      </label>
+    </div>
+  </div>
+
+  <div>
+    <label class="block font-semibold mb-1">Commencer par</label>
+    <div class="flex gap-2">
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="startCat" value="a" class="sr-only peer" checked>
+        <span class="px-3 py-1 rounded bg-gray-100 peer-checked:bg-teal-500 peer-checked:text-white">Thématique A</span>
+      </label>
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="startCat" value="b" class="sr-only peer">
+        <span class="px-3 py-1 rounded bg-gray-100 peer-checked:bg-teal-500 peer-checked:text-white">Thématique B</span>
+      </label>
+    </div>
+  </div>
+
+  <div>
+    <label class="block font-semibold mb-1">Mode de sélection</label>
+    <div class="flex gap-2 items-center text-sm">
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="selectionMode" value="alternate" class="sr-only peer" checked>
+        <span class="px-3 py-1 rounded bg-gray-100 peer-checked:bg-teal-500 peer-checked:text-white">Alterner</span>
+      </label>
+      <label class="inline-flex items-center gap-2">
+        <input type="radio" name="selectionMode" value="batch" class="sr-only peer">
+        <span class="px-3 py-1 rounded bg-gray-100 peer-checked:bg-pink-500 peer-checked:text-white">Une catégorie d'abord</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between">
+    <div>
+      <label class="font-semibold">Aide visuelle</label>
+      <div class="text-xs text-gray-500">Afficher le badge et surligner le prochain mot</div>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="helperToggle" class="sr-only peer" checked>
+      <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-teal-500 transition-all duration-300"></div>
+      <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+    </label>
+  </div>
+
+  <div class="flex items-center justify-between">
+    <span class="font-semibold">Mode Challenge</span>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="challengeMode" class="sr-only peer">
+      <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-red-500 transition-all duration-300"></div>
+      <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+    </label>
+  </div>
+
+  <div id="challengeTimeContainer" class="hidden">
+    <label class="block font-semibold mb-1">Temps limite (s)</label>
+    <input type="number" id="challengeTime" value="30" min="5" max="300" class="w-full border rounded p-2" />
+  </div>
+
+  <button id="start-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg">Démarrer</button>
+</div>
+
+<!-- Timer -->
+<div id="timer-container" class="hidden mt-4">
+  <span class="text-lg font-semibold">⏱ Temps : </span>
+  <span id="timer" class="text-2xl font-bold text-blue-600">0.00 s</span>
+</div>
+
+<!-- Game area -->
+<div id="game-area" class="w-full max-w-2xl mt-4 grid grid-cols-2 gap-3"></div>
+
+<!-- Next badge -->
+<div id="next-badge" class="hidden mt-3 text-center">
+  <span class="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold shadow-sm">Prochain: <strong id="next-word" class="ml-2"></strong></span>
+</div>
+
+<!-- Result -->
+<div id="result-card" class="hidden mt-6 bg-white shadow-lg rounded-xl p-6 text-center space-y-4">
+  <div class="text-2xl font-bold text-green-600">✅ Bravo !</div>
+  <div id="final-time" class="text-3xl font-extrabold text-blue-600">0.00 s</div>
+  <div id="score-display" class="text-xl font-semibold text-purple-600"></div>
+  <div class="flex justify-center gap-3">
+    <button id="retry-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">🔁 Rejouer</button>
+    <button id="back-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded">⚙️ Paramètres</button>
+  </div>
+</div>
+
+
+<!-- Footer -->
+<footer class="w-full max-w-md text-center mx-auto mt-6 text-sm text-gray-600">
+  <a href="/privacy.html" class="text-blue-600 hover:underline">Politique de confidentialité</a>
+  <span class="mx-2">•</span>
+  <a href="/" class="text-blue-600 hover:underline">Retour</a>
+</footer>
+
+<script>
+/* ----------------- STATE ----------------- */
+let wordsPerCategory = 3;
+let ascendingOrder = true;
+let invertSecond = false;
+let startCategory = 'a';
+let helperEnabled = true;
+let isChallenge = false;
+let alternateCategories = true;
+let expected = 0, sorted = [];
+let pickedNames = [];
+let remainingTime = 0, timerInterval=null, startTime=null;
+let POOLS = {};
+
+/* ----------------- ELEMENTS ----------------- */
+const headerEl = document.getElementById('game-header');
+const settings = document.getElementById('settings');
+const startBtn = document.getElementById('start-btn');
+const retryBtn = document.getElementById('retry-btn');
+const backBtn = document.getElementById('back-btn');
+const gameArea = document.getElementById('game-area');
+const timerBox = document.getElementById('timer-container');
+const timerEl = document.getElementById('timer');
+const nextBadge = document.getElementById('next-badge');
+const nextWordEl = document.getElementById('next-word');
+const resultCard = document.getElementById('result-card');
+const finalTimeEl = document.getElementById('final-time');
+const scoreDisplay = document.getElementById('score-display');
+const diffBtns = document.querySelectorAll('.diff-btn');
+const ascendingOrderEl = document.getElementById('ascendingOrder');
+const invertSecondEl = document.getElementById('invertSecond');
+const helperToggle = document.getElementById('helperToggle');
+const challengeCheckbox = document.getElementById('challengeMode');
+const challengeTimeContainer = document.getElementById('challengeTimeContainer');
+const challengeTimeInput = document.getElementById('challengeTime');
+
+/* ----------------- HEADER ----------------- */
+function updateHeaderText(){
+  const order = ascendingOrder ? 'Ascendant' : 'Descendant';
+  const inv = invertSecond ? ' (2ème inversée)' : '';
+  const mode = alternateCategories ? 'Alterner' : 'Une catégorie d\'abord';
+  headerEl.textContent = `🧠 BrainSort — ${mode} — ${order}${inv}`;
+}
+updateHeaderText();
+
+/* ----------------- PREFS ----------------- */
+function savePrefs(){
+  const prefs = { wordsGame: { wordsPerCategory, ascendingOrder, invertSecond, startCategory, helperEnabled, isChallenge, alternateCategories, challengeTime: parseInt(challengeTimeInput.value||30) } };
+  localStorage.setItem('brainSortPrefs', JSON.stringify(prefs));
+}
+function loadPrefs(){
+  const prefs = JSON.parse(localStorage.getItem('brainSortPrefs')||'{}');
+  if(prefs.wordsGame){
+    const w = prefs.wordsGame;
+    wordsPerCategory = w.wordsPerCategory||wordsPerCategory;
+    ascendingOrder = w.ascendingOrder!==undefined?w.ascendingOrder:ascendingOrder;
+    invertSecond = w.invertSecond||false;
+    startCategory = w.startCategory||'a';
+    helperEnabled = w.helperEnabled!==undefined?w.helperEnabled:true;
+    isChallenge = w.isChallenge||false;
+    alternateCategories = w.alternateCategories!==undefined?w.alternateCategories:true;
+    if(w.challengeTime) challengeTimeInput.value=w.challengeTime;
+  }
+}
+loadPrefs();
+updateHeaderText();
+
+/* ----------------- LOAD CATEGORIES ----------------- */
+async function loadCategories(limit=20){
+  try{
+    const res = await fetch(`https://backend-api-pg-skipper.vercel.app/wordapi/categories?limit=${limit}`);
+    if(!res.ok) throw new Error("Erreur API");
+    const data = await res.json();
+    POOLS = {};
+    data.forEach(cat=>{ POOLS[cat.categoryName]=cat.words; });
+  }catch(e){ console.error("Impossible de charger les catégories",e); }
+}
+
+/* ----------------- PICK WORDS ----------------- */
+function pickWords(count){
+  const keys = Object.keys(POOLS);
+  if(keys.length<2) return { a: [], b: [] };
+  let idx1=Math.floor(Math.random()*keys.length);
+  let idx2; do { idx2=Math.floor(Math.random()*keys.length); } while(idx2===idx1);
+  const catA = keys[idx1], catB = keys[idx2];
+  pickedNames = [catA, catB];
+  const wordsA = _.sampleSize(POOLS[catA], count);
+  const wordsB = _.sampleSize(POOLS[catB], count);
+  return { a: wordsA, b: wordsB };
+}
+
+/* ----------------- BUILD EXPECTED ----------------- */
+function buildExpected(wordsA, wordsB){
+  const aSorted = ascendingOrder ? wordsA.slice().sort() : wordsA.slice().sort().reverse();
+  const bSorted = invertSecond ? (ascendingOrder ? wordsB.slice().sort().reverse() : wordsB.slice().sort()) 
+                               : (ascendingOrder ? wordsB.slice().sort() : wordsB.slice().sort().reverse());
+  if(alternateCategories){
+    const result=[]; let turn=startCategory==='b'?'b':'a'; let seqA=aSorted.slice(), seqB=bSorted.slice();
+    while(seqA.length||seqB.length){
+      if(turn==='a'){ if(seqA.length) result.push(seqA.shift()); else if(seqB.length) result.push(seqB.shift()); turn='b'; }
+      else{ if(seqB.length) result.push(seqB.shift()); else if(seqA.length) result.push(seqA.shift()); turn='a'; }
+    }
+    return result;
+  } else { return startCategory==='a'?aSorted.concat(bSorted):bSorted.concat(aSorted); }
+}
+
+/* ----------------- SHUFFLE WORDS ----------------- */
+function shuffleWordsInterleaved(wordsA, wordsB){
+  const poolA = _.shuffle(wordsA.slice());
+  const poolB = _.shuffle(wordsB.slice());
+  const result=[];
+  const maxLen = Math.max(poolA.length,poolB.length);
+  for(let i=0;i<maxLen;i++){ if(i<poolA.length) result.push(poolA[i]); if(i<poolB.length) result.push(poolB[i]); }
+  return _.shuffle(result);
+}
+
+function createWordBtn(word){
+  const btn=document.createElement('button');
+  btn.className='w-full py-3 rounded bg-white border text-left shadow-sm hover:bg-blue-500 hover:text-white transition';
+  btn.textContent=word;
+  if(sorted[0] && word===sorted[0]){
+    const s=document.createElement('span'); s.className='ml-2 text-xs font-bold text-green-700'; s.textContent=' START'; btn.appendChild(s);
+  }
+  btn.addEventListener('click',()=>checkWord(btn,word));
+  return btn;
+}
+
+/* ----------------- START GAME ----------------- */
+async function startGame(){
+  settings.style.display='none'; gameArea.innerHTML=''; expected=0; sorted=[]; clearInterval(timerInterval); timerInterval=null; startTime=null; resultCard.classList.add('hidden');
+  await loadCategories();
+  const picked=pickWords(wordsPerCategory);
+  const wordsA=picked.a, wordsB=picked.b;
+  sorted=buildExpected(wordsA,wordsB);
+  const pool=shuffleWordsInterleaved(wordsA,wordsB);
+  const mid=Math.ceil(pool.length/2);
+  const colA=document.createElement('div'); colA.className='p-2 space-y-2';
+  const colB=document.createElement('div'); colB.className='p-2 space-y-2';
+  pool.slice(0,mid).forEach(w=>colA.appendChild(createWordBtn(w)));
+  pool.slice(mid).forEach(w=>colB.appendChild(createWordBtn(w)));
+  gameArea.appendChild(colA); gameArea.appendChild(colB);
+  if(helperEnabled && expected<sorted.length){ showNextBadge(sorted[expected]); highlightExpected(true); } else { hideNextBadge(); highlightExpected(false); }
+  timerBox.classList.remove('hidden');
+  if(isChallenge){ remainingTime=parseInt(challengeTimeInput.value||30); startChallengeTimer(); } 
+  else{ startTime=Date.now(); timerInterval=setInterval(()=>{ timerEl.textContent=((Date.now()-startTime)/1000).toFixed(2)+' s'; },100); }
+}
+
+/* ----------------- CHECK WORD ----------------- */
+function checkWord(btn,word){
+  if(word===sorted[expected]){
+    btn.classList.add('opacity-20'); btn.disabled=true; expected++;
+    if(helperEnabled){ if(expected<sorted.length){ showNextBadge(sorted[expected]); highlightExpected(true); } else{ hideNextBadge(); highlightExpected(false); } }
+    if(expected===sorted.length){ clearInterval(timerInterval); showResult(((Date.now()-startTime)/1000).toFixed(2)); }
+  } else { clearInterval(timerInterval); messageFail(); setTimeout(()=>startGame(),900); }
+}
+
+function messageFail(){ resultCard.classList.remove('hidden'); finalTimeEl.textContent='❌ Mauvaise réponse'; setTimeout(()=>resultCard.classList.add('hidden'),900); }
+function showResult(time){ timerBox.classList.add('hidden'); finalTimeEl.textContent=`${time} s`; scoreDisplay.textContent=`Score: ${Math.round(1000/Math.max(parseFloat(time),0.1))}`; resultCard.classList.remove('hidden'); }
+
+/* ----------------- NEXT BADGE ----------------- */
+function showNextBadge(val){ nextWordEl.textContent=val; nextBadge.classList.remove('hidden'); }
+function hideNextBadge(){ nextBadge.classList.add('hidden'); }
+function highlightExpected(enable){ document.querySelectorAll('#game-area button').forEach(b=>{ b.classList.remove('ring-4','ring-yellow-400','animate-pulse'); if(enable && expected<sorted.length && b.textContent.startsWith(sorted[expected])) b.classList.add('ring-4','ring-yellow-400','animate-pulse'); }); }
+
+/* ----------------- TIMER ----------------- */
+function startChallengeTimer(){ timerEl.textContent=`${remainingTime.toFixed(2)} s`; timerInterval=setInterval(()=>{ remainingTime-=0.1; if(remainingTime<=0){ remainingTime=0; clearInterval(timerInterval); messageFail(); } timerEl.textContent=`${remainingTime.toFixed(2)} s`; },100); }
+
+/* ----------------- UI EVENTS ----------------- */
+diffBtns.forEach(btn=> btn.addEventListener('click', ()=>{ diffBtns.forEach(b=>b.classList.remove('ring-2','ring-indigo-500')); btn.classList.add('ring-2','ring-indigo-500'); wordsPerCategory=parseInt(btn.textContent.match(/\d+/)[0]); savePrefs(); }));
+ascendingOrderEl.addEventListener('change',()=>{ ascendingOrder=ascendingOrderEl.checked; savePrefs(); updateHeaderText(); });
+invertSecondEl.addEventListener('change',()=>{ invertSecond=invertSecondEl.checked; savePrefs(); updateHeaderText(); });
+document.getElementsByName('startCat').forEach(r=>r.addEventListener('change',()=>{ startCategory=document.querySelector('input[name="startCat"]:checked').value; savePrefs(); }));
+helperToggle.addEventListener('change',()=>{ helperEnabled=helperToggle.checked; savePrefs(); });
+challengeCheckbox.addEventListener('change',()=>{ isChallenge=challengeCheckbox.checked; challengeTimeContainer.style.display=isChallenge?'block':'none'; savePrefs(); });
+startBtn.addEventListener('click',()=>startGame());
+retryBtn.addEventListener('click',()=>startGame());
+backBtn.addEventListener('click',()=>{ resultCard.classList.add('hidden'); settings.style.display='block'; });
+document.getElementsByName('selectionMode').forEach(r=>r.addEventListener('change',()=>{ alternateCategories=document.querySelector('input[name="selectionMode"]:checked').value==='alternate'; savePrefs(); updateHeaderText(); }));
+</script>
+
+</body>
+</html>
