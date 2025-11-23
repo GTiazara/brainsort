@@ -1,6 +1,6 @@
 {
-  "name": "BrainSort",
-  "short_name": "BrainSort",
+  "name": "NeuroTri",
+  "short_name": "NeuroTri",
   "description": "Un jeu rapide et intelligent : trie les nombres le plus vite possible !",
   "start_url": "./index.html",
   "display": "standalone",
