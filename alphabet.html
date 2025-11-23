@@ -68,9 +68,22 @@
     </div>
 
     <div class="flex items-center justify-between">
+      <div>
+        <span class="font-semibold">Aide visuelle</span>
+        <div class="text-xs text-gray-500">Afficher le badge et surligner la prochaine lettre</div>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="alphaHelper" class="sr-only peer">
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-teal-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+
+
+    <div class="flex items-center justify-between">
       <span class="font-semibold">Sons</span>
       <label class="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" id="alphaSound" class="sr-only peer">
+        <input type="checkbox" id="alphaSound" class="sr-only peer" checked>
         <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-indigo-500 transition-all duration-300"></div>
         <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
       </label>
@@ -82,6 +95,15 @@
   <div id="timer-container" class="hidden mt-4">
     <span>⏱ </span><span id="alpha-timer" class="text-xl font-bold">0.00 s</span>
   </div>
+
+  <!-- Next expected badge -->
+  <div id="alpha-next-badge" class="hidden mt-2 text-center">
+    <span class="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold shadow-sm">
+      Prochaine lettre: <strong id="alpha-next-letter" class="ml-2"></strong>
+    </span>
+  </div>
+
+
 
   <div id="letters" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 w-full max-w-md mt-4"></div>
 
@@ -98,9 +120,10 @@
   </div>
 
   
-  <audio id="click-snd" src="sounds/click.wav" preload="auto"></audio>
-  <audio id="success-snd" src="sounds/success.wav" preload="auto"></audio>
-  <audio id="fail-snd" src="sounds/fail.wav" preload="auto"></audio>
+<!-- Sounds -->
+<audio id="click-sound" src="sounds/click.wav" preload="auto"></audio>
+<audio id="success-sound" src="sounds/success.wav"></audio>
+<audio id="fail-sound" src="sounds/fail.wav"></audio>
 
   <!-- Footer -->
 <footer class="w-full max-w-md text-center mx-auto mt-6 text-sm text-gray-600">
@@ -124,9 +147,9 @@ const alphaChallenge = document.getElementById('alphaChallenge');
 const alphaChallengeTime = document.getElementById('alphaChallengeTime');
 const alphaChallengeSeconds = document.getElementById('alphaChallengeSeconds');
 const alphaSound = document.getElementById('alphaSound');
-const clickSnd = document.getElementById('click-snd');
-const successSnd = document.getElementById('success-snd');
-const failSnd = document.getElementById('fail-snd');
+const clickSnd = document.getElementById('click-sound');
+const successSnd = document.getElementById('success-sound');
+const failSnd = document.getElementById('fail-sound');
 const alphaMessage = document.getElementById('alpha-message');
 const alphaResult = document.getElementById('alpha-result');
 const alphaFinalTime = document.getElementById('alpha-final-time');
@@ -141,6 +164,31 @@ let alphaStartTime = null;
 let alphaRemaining = 0;
 let alphaSorted = [];
 let alphaExpected = 0;
+
+const alphaHelper = document.getElementById("alphaHelper");
+const nextBadge = document.getElementById("alpha-next-badge");
+const nextLetterEl = document.getElementById("alpha-next-letter");
+
+function showAlphaNext(letter){
+  nextLetterEl.textContent = letter.toUpperCase();
+  nextBadge.classList.remove("hidden");
+}
+
+function hideAlphaNext(){
+  nextBadge.classList.add("hidden");
+}
+
+function highlightAlphaExpected(enable){
+  const btns = document.querySelectorAll("#letters button");
+  btns.forEach(b=>{
+    b.classList.remove("ring-4","ring-yellow-400","animate-pulse");
+    if(enable && b.textContent.toLowerCase() === alphaSorted[alphaExpected]){
+      b.classList.add("ring-4","ring-yellow-400","animate-pulse");
+    }
+  });
+}
+
+
 
 alphaCountBtns.forEach(b=>{
   b.addEventListener('click', ()=> {
@@ -221,7 +269,7 @@ function startAlpha(){
       alphaTimer.textContent = alphaRemaining.toFixed(2) + ' s';
       alphaTimerInterval = setInterval(()=>{
         alphaRemaining -= 0.1;
-        if(alphaRemaining <= 0){ alphaRemaining = 0; clearInterval(alphaTimerInterval); alphaFail(); }
+        if(alphaRemaining <= 0){ alphaRemaining = 0; clearInterval(alphaTimerInterval); }
         alphaTimer.textContent = alphaRemaining.toFixed(2) + ' s';
       },100);
     } else {
@@ -231,6 +279,16 @@ function startAlpha(){
       },100);
     }
   }
+
+  if (alphaHelper.checked) {
+  showAlphaNext(alphaSorted[0]);
+  highlightAlphaExpected(true);
+  } else {
+    hideAlphaNext();
+    highlightAlphaExpected(false);
+  }
+
+
 }
 
 function alphaCheck(btn, letter){
@@ -248,8 +306,28 @@ function alphaCheck(btn, letter){
     clearInterval(alphaTimerInterval); alphaTimerInterval=null;
     if(alphaSound.checked) failSnd.play().catch(()=>{});
     alphaMessage.innerHTML = '<span class="text-red-600">❌ Mauvaise lettre — recommence !</span>';
+    showAlphaNext(alphaSorted[alphaExpected]);
+    highlightAlphaExpected(true);
     setTimeout(startAlpha, 900);
   }
+
+  if(alphaHelper.checked){
+    if(alphaExpected < alphaSorted.length){
+      showAlphaNext(alphaSorted[alphaExpected]);
+      highlightAlphaExpected(true);
+    } else {
+      hideAlphaNext();
+      highlightAlphaExpected(false);
+    }
+  }
+
+  if(alphaHelper.checked){
+    showAlphaNext(alphaSorted[alphaExpected]);
+    highlightAlphaExpected(true);
+  }
+
+
+
 }
 
 function alphaWin(time){
