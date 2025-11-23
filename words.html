@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BrainSort — Mots</title>
+  <title>NeuroTri — Mots</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
   <meta name="theme-color" content="#2563eb" />
 </head>
 <body class="min-h-screen flex flex-col items-center bg-gray-50 text-gray-800 p-4 sm:p-6 transition-colors duration-500">
 
-<h1 id="game-header" class="text-3xl sm:text-4xl font-bold text-blue-600 mt-4 mb-2 text-center">🧠 BrainSort — Mots</h1>
+<h1 id="game-header" class="text-3xl sm:text-4xl font-bold text-blue-600 mt-4 mb-2 text-center">🧠 NeuroTri — Mots</h1>
 <p class="text-center text-sm sm:text-base mb-4">Cliquez sur les mots en respectant l'ordre alphabétique par thématique.</p>
 
 <!-- Settings -->
@@ -73,7 +73,7 @@
       <div class="text-xs text-gray-500">Afficher le badge et surligner le prochain mot</div>
     </div>
     <label class="relative inline-flex items-center cursor-pointer">
-      <input type="checkbox" id="helperToggle" class="sr-only peer" checked>
+      <input type="checkbox" id="helperToggle" class="sr-only peer">
       <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-teal-500 transition-all duration-300"></div>
       <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
     </label>
@@ -82,7 +82,7 @@
   <div class="flex items-center justify-between">
     <span class="font-semibold">Mode Challenge</span>
     <label class="relative inline-flex items-center cursor-pointer">
-      <input type="checkbox" id="challengeMode" class="sr-only peer">
+      <input type="checkbox" id="challengeMode" class="sr-only peer" checked>
       <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-red-500 transition-all duration-300"></div>
       <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
     </label>
@@ -135,8 +135,8 @@ let wordsPerCategory = 3;
 let ascendingOrder = true;
 let invertSecond = false;
 let startCategory = 'a';
-let helperEnabled = true;
-let isChallenge = false;
+let helperEnabled = false;
+let isChallenge = true;
 let alternateCategories = true;
 let expected = 0, sorted = [];
 let pickedNames = [];
@@ -170,7 +170,7 @@ function updateHeaderText(){
   const order = ascendingOrder ? 'Ascendant' : 'Descendant';
   const inv = invertSecond ? ' (2ème inversée)' : '';
   const mode = alternateCategories ? 'Alterner' : 'Une catégorie d\'abord';
-  headerEl.textContent = `🧠 BrainSort — ${mode} — ${order}${inv}`;
+  headerEl.textContent = `🧠 NeuroTri — ${mode} — ${order}${inv}`;
 }
 updateHeaderText();
 

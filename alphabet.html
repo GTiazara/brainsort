@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BrainSort — Alphabet</title>
+  <title>NeuroTri — Alphabet</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="shared.js"></script>
   <link rel="manifest" href="manifest.json">
@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="icons/icon-192x192.png">
 </head>
 <body id="body" class="min-h-screen flex flex-col items-center bg-gray-50 text-gray-800 p-4 sm:p-6 transition-colors duration-500">
-  <h1 class="text-3xl sm:text-4xl font-bold text-purple-600 mt-4 mb-2 text-center">🔤 BrainSort — Alphabet</h1>
+  <h1 class="text-3xl sm:text-4xl font-bold text-purple-600 mt-4 mb-2 text-center">🔤 NeuroTri — Alphabet</h1>
   <p class="text-center text-sm sm:text-base mb-4" id="instruction">Clique sur les lettres <strong>dans l'ordre A → Z</strong> le plus vite possible !</p>
 
   <div id="settings" class="w-full max-w-md bg-white p-4 rounded-xl shadow-md space-y-4">
@@ -47,7 +47,7 @@
     <div class="flex items-center justify-between">
       <span class="font-semibold">Mode Challenge</span>
       <label class="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" id="alphaChallenge" class="sr-only peer">
+        <input type="checkbox" id="alphaChallenge" class="sr-only peer" checked>
         <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-red-500 transition-all duration-300"></div>
         <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
       </label>
@@ -55,7 +55,7 @@
 
     <div id="alphaChallengeTime" class="hidden">
       <label class="block font-semibold">Temps limite (s)</label>
-      <input id="alphaChallengeSeconds" type="number" min="5" max="120" value="30" class="w-full rounded border p-2"/>
+      <input id="alphaChallengeSeconds" type="number" min="5" max="120" value="10" class="w-full rounded border p-2"/>
     </div>
 
     <div class="flex items-center justify-between">
@@ -70,7 +70,7 @@
     <div class="flex items-center justify-between">
       <span class="font-semibold">Sons</span>
       <label class="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" id="alphaSound" class="sr-only peer" checked>
+        <input type="checkbox" id="alphaSound" class="sr-only peer">
         <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-indigo-500 transition-all duration-300"></div>
         <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
       </label>

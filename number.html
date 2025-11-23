@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BrainSort</title>
+  <title>NeuroTri</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="shared.js"></script>
 
@@ -23,7 +23,7 @@
 <body id="body"
     class="min-h-screen flex flex-col items-center bg-gray-50 text-gray-800 p-4 sm:p-6 transition-colors duration-500">
 
-<h1 class="text-3xl sm:text-4xl font-bold text-blue-600 mt-4 mb-2 text-center">🧠 BrainSort</h1>
+<h1 class="text-3xl sm:text-4xl font-bold text-blue-600 mt-4 mb-2 text-center">🧠 NeuroTri</h1>
 <p class="text-center text-sm sm:text-base mb-4">
   Clique sur les nombres <strong>dans l’ordre ascendant</strong> le plus vite possible !
 </p>
@@ -135,7 +135,7 @@
   <div class="flex items-center justify-between">
     <span class="text-sm sm:text-base font-semibold">Mode Challenge</span>
     <label class="relative inline-flex items-center cursor-pointer">
-      <input type="checkbox" id="challengeMode" class="sr-only peer">
+      <input type="checkbox" id="challengeMode" class="sr-only peer" checked>
       <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-red-500 transition-all duration-300"></div>
       <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
     </label>
@@ -143,7 +143,7 @@
 
   <div id="challengeTimeContainer" class="mt-2 hidden">
     <label class="block font-semibold mb-1 text-sm sm:text-base">Temps limite (secondes):</label>
-    <input type="number" id="challengeTime" class="w-full border-gray-300 rounded-md p-2 text-sm sm:text-base" value="30" min="5" max="120" />
+    <input type="number" id="challengeTime" class="w-full border-gray-300 rounded-md p-2 text-sm sm:text-base" value="10" min="5" max="120" />
   </div>
 
   <!-- Live Timer Toggle -->
@@ -173,7 +173,7 @@
       <div class="text-xs text-gray-500">Afficher le badge et surligner le prochain nombre</div>
     </div>
     <label class="relative inline-flex items-center cursor-pointer">
-      <input type="checkbox" id="helperToggle" class="sr-only peer" checked>
+      <input type="checkbox" id="helperToggle" class="sr-only peer">
       <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-teal-500 transition-all duration-300"></div>
       <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
     </label>
@@ -275,12 +275,12 @@ let selectedNum = "random";
 let selectedDiff = 100;
 let selectedTheme = "light";
 let ascendingOrder = true;
-let isChallenge = false;
+let isChallenge = true;
 let remainingTime = 0;
 let soundEnabled = true;
 let oddEvenMode = false;
 let invertPairs = false;
-let helperEnabled = true;
+let helperEnabled = false;
 let oddEvenModeType = 'oddsThenEvens';
 let oddEvenStart = 'odd';
 let numbers = [], sorted = [], expected = 0, timerInterval = null, startTime = null;
