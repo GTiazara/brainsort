@@ -15,10 +15,12 @@
 <body class="min-h-screen bg-gray-50 text-gray-800 p-6 flex flex-col items-center">
   <header class="max-w-2xl w-full text-center mb-6">
     <h1 class="text-4xl font-extrabold text-blue-600">🧠 NeuroTri</h1>
-    <p class="text-gray-600 mt-2">Choisis un jeu pour entraîner ton cerveau — tri rapide de nombres ou d'alphabet.</p>
+    <p class="text-gray-600 mt-2">Choisis un jeu pour entraîner ton cerveau — tri rapide de nombres, alphabet, formes ou couleurs.</p>
   </header>
 
   <main class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-3xl">
+
+    <!-- Nombres -->
     <a href="number.html" class="game-card group block bg-white rounded-2xl p-6 shadow-lg transform transition hover:-translate-y-1">
       <div class="flex items-center gap-4">
         <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white text-2xl">🔢</div>
@@ -30,6 +32,7 @@
       <div class="mt-4 text-sm text-gray-500">Difficulté, mode challenge, thèmes, sons.</div>
     </a>
 
+    <!-- Alphabet -->
     <a href="alphabet.html" class="game-card group block bg-white rounded-2xl p-6 shadow-lg transform transition hover:-translate-y-1">
       <div class="flex items-center gap-4">
         <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl">🔤</div>
@@ -41,6 +44,7 @@
       <div class="mt-4 text-sm text-gray-500">Mode casse, voyelles/consonnes, aide visuelle et leaderboard.</div>
     </a>
 
+    <!-- Mots -->
     <a href="words.html" class="game-card group block bg-white rounded-2xl p-6 shadow-lg transform transition hover:-translate-y-1">
       <div class="flex items-center gap-4">
         <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center text-white text-2xl">📝</div>
@@ -52,15 +56,42 @@
       <div class="mt-4 text-sm text-gray-500">Thématiques, difficulté, aide visuelle, mode challenge et leaderboard.</div>
     </a>
 
+    <!-- Formes -->
+    <a href="shapes.html" class="game-card group block bg-white rounded-2xl p-6 shadow-lg transform transition hover:-translate-y-1">
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-white text-2xl">🔺</div>
+        <div>
+          <h2 class="text-xl font-bold">NeuroTri — Formes</h2>
+          <p class="text-sm text-gray-600 mt-1">Tri rapide de formes — carrés et triangles, remplissage et couleur.</p>
+        </div>
+      </div>
+      <div class="mt-4 text-sm text-gray-500">Mode challenge, couleurs, remplissage, séquentiel.</div>
+    </a>
+
+    <!-- Couleurs -->
+    <!-- <a href="colors.html" class="game-card group block bg-white rounded-2xl p-6 shadow-lg transform transition hover:-translate-y-1">
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-red-500 to-orange-400 flex items-center justify-center text-white text-2xl">🎨</div>
+        <div>
+          <h2 class="text-xl font-bold">NeuroTri — Couleurs</h2>
+          <p class="text-sm text-gray-600 mt-1">Tri rapide par couleur — identifie et clique vite selon les règles de couleur.</p>
+        </div>
+      </div>
+      <div class="mt-4 text-sm text-gray-500">Mode challenge, motifs et couleurs variées.</div>
+    </a> -->
+
     <div class="game-card col-span-full bg-white rounded-2xl p-6 shadow-lg text-center">
       <h3 class="text-lg font-semibold">Plus à venir</h3>
-      <p class="text-sm text-gray-600 mt-2">Tu pourras ajouter d'autres jeux de tri — numérique, alphabet, couleurs...</p>
-      <div class="mt-4 flex justify-center gap-3">
+      <p class="text-sm text-gray-600 mt-2">Tu pourras ajouter d'autres jeux de tri — numérique, alphabet, couleurs, formes...</p>
+      <div class="mt-4 flex justify-center gap-3 flex-wrap">
         <a href="number.html" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Jouer Nombres</a>
         <a href="alphabet.html" class="px-4 py-2 bg-pink-500 text-white rounded-lg">Jouer Alphabet</a>
         <a href="words.html" class="px-4 py-2 bg-yellow-500 text-white rounded-lg">Jouer Mots</a>
+        <a href="shapes.html" class="px-4 py-2 bg-green-500 text-white rounded-lg">Jouer Formes</a>
+        <!-- <a href="colors.html" class="px-4 py-2 bg-red-500 text-white rounded-lg">Jouer Couleurs</a> -->
       </div>
     </div>
+
   </main>
 
   <footer class="mt-8 text-sm text-gray-500">
