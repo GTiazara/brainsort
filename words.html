@@ -107,7 +107,7 @@
       </label>
     </div>
 
-    <div id="challengeTimeContainer" class="hidden">
+    <div id="challengeTimeContainer">
       <label class="block font-semibold mb-1">Temps limite (s)</label>
       <input type="number" id="challengeTime" value="30" min="5" max="300" class="w-full border rounded p-2" />
     </div>
@@ -364,7 +364,7 @@
     
         showNextBadge(sorted[expected]);
         highlightExpected(true);
-        
+
         messageFail();
         setTimeout(()=>startGame(),1200);
         if (soundEnabled) {
