@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NeuroTri — Formes logiques</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  .shape-box {
+    width: 240px;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+  }
+</style>
+</head>
+<body class="bg-gray-50 text-gray-800 p-4">
+
+<h1 class="text-3xl font-bold text-blue-600 text-center mb-3">🧠 NeuroTri — Formes logiques (SVG)</h1>
+
+<div id="settings" class="max-w-md mx-auto bg-white p-4 rounded-xl shadow space-y-4">
+  <div>
+    <label class="font-semibold">Type de règle</label>
+    <select id="ruleMode" class="w-full border rounded p-2">
+      <option value="fill">Règle remplissage</option>
+      <option value="color">Règle couleur</option>
+    </select>
+    <div id="ruleDescription" class="text-sm text-gray-700 mt-2 p-2 bg-gray-100 rounded"></div>
+  </div>
+
+  <div>
+    <label class="font-semibold">Mode Challenge</label>
+    <label class="relative inline-flex items-center cursor-pointer float-right">
+      <input type="checkbox" id="challengeMode" class="sr-only peer" checked>
+      <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-red-500"></div>
+      <div class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-7"></div>
+    </label>
+  </div>
+
+  <div>
+    <label class="font-semibold">Nombre de séquences</label>
+    <input id="sequenceCount" type="number" min="1" max="100" value="10" class="w-full border rounded p-2">
+  </div>
+
+  <div>
+    <label class="font-semibold">Temps limite par séquence (s)</label>
+    <input id="timeLimit" type="number" min="0.5" step="0.5" max="30" value="4" class="w-full border rounded p-2">
+  </div>
+
+  <button id="startBtn" class="w-full bg-green-600 text-white py-2 rounded-lg">Démarrer</button>
+</div>
+
+<div id="hud" class="hidden max-w-md mx-auto mt-4 flex justify-between">
+  <div class="font-semibold">⏱ <span id="timer">0.00</span>s</div>
+  <div id="nextBadge" class="hidden bg-yellow-100 px-3 py-1 rounded-full text-yellow-800">Attendu : <strong id="nextKey"></strong></div>
+</div>
+
+<div id="gameArea" class="hidden max-w-md mx-auto bg-white p-6 mt-4 rounded-xl shadow text-center">
+  <div id="shapeArea" class="shape-box"></div>
+  <p id="shapeInfo" class="text-sm text-gray-600 mt-2"></p>
+  <div class="flex gap-3 justify-center mt-4" id="buttonContainer">
+    <button class="px-6 py-3 rounded bg-gray-100 border" id="btnN">N</button>
+    <button class="px-6 py-3 rounded bg-gray-100 border" id="btnX">X</button>
+  </div>
+</div>
+
+<div id="resultCard" class="hidden max-w-md mx-auto mt-6 bg-white p-4 rounded-xl shadow text-center">
+  <div id="resultTitle" class="text-2xl font-bold"></div>
+  <p id="resultText" class="text-lg mt-2"></p>
+  <button id="backBtn" class="mt-4 px-4 py-2 bg-gray-300 rounded">Retour</button>
+</div>
+
+<script>
+const ruleMode = document.getElementById('ruleMode');
+const ruleDescription = document.getElementById('ruleDescription');
+const sequenceCount = document.getElementById('sequenceCount');
+const timeLimit = document.getElementById('timeLimit');
+const challengeMode = document.getElementById('challengeMode');
+
+function updateRuleText() {
+  if(ruleMode.value === 'fill'){
+    ruleDescription.innerHTML = 'VIDE → (Bleu=N / Orange=X)<br>REMPLI → (Carré=N / Triangle=X)';
+  } else {
+    ruleDescription.innerHTML = 'Bleu → (Carré=N / Triangle=X)<br>Orange → (Vide=N / Rempli=X)';
+  }
+}
+updateRuleText();
+ruleMode.onchange = updateRuleText;
+
+let expected='N';
+let remaining=0;
+let rounds=0;
+let timerInterval=null;
+
+function randomShape() {
+  const shapes=['square','triangle'];
+  const colors=['blue','orange'];
+  const fills=['filled','empty'];
+  return {
+    shape: shapes[Math.floor(Math.random()*shapes.length)],
+    color: colors[Math.floor(Math.random()*colors.length)],
+    fill: fills[Math.floor(Math.random()*fills.length)]
+  };
+}
+
+function computeAnswer(o){
+  if(ruleMode.value==='fill'){
+    if(o.fill==='empty') return o.color==='blue'?'N':'X';
+    return o.shape==='square'?'N':'X';
+  }
+  if(ruleMode.value==='color'){
+    if(o.color==='blue') return o.shape==='square'?'N':'X';
+    return o.fill==='empty'?'N':'X';
+  }
+  return 'N';
+}
+
+// --- SVG rendering ---
+function render(o){
+  const area=document.getElementById('shapeArea');
+  area.innerHTML='';
+
+  let svgNS = "http://www.w3.org/2000/svg";
+  let svg = document.createElementNS(svgNS,"svg");
+  svg.setAttribute("width","150");
+  svg.setAttribute("height","150");
+
+  let color = o.color==="blue"?"#2563eb":"#fb923c";
+
+  if(o.shape==="square") {
+    let rect = document.createElementNS(svgNS,"rect");
+    rect.setAttribute("x","0");
+    rect.setAttribute("y","0");
+    rect.setAttribute("width","150");
+    rect.setAttribute("height","150");
+    rect.setAttribute("fill", o.fill==="filled"?color:"none");
+    rect.setAttribute("stroke", color);
+    rect.setAttribute("stroke-width","6");
+    svg.appendChild(rect);
+  } else if(o.shape==="triangle") {
+    let tri = document.createElementNS(svgNS,"polygon");
+    tri.setAttribute("points","75,0 0,150 150,150");
+    tri.setAttribute("fill", o.fill==="filled"?color:"none");
+    tri.setAttribute("stroke", color);
+    tri.setAttribute("stroke-width","6");
+    svg.appendChild(tri);
+  }
+
+  area.appendChild(svg);
+  document.getElementById('shapeInfo').textContent = o.shape+' · '+o.color+' · '+o.fill;
+}
+
+// --- Game logic ---
+function startRound(){
+  if(rounds<=0){return endGame(true);}
+  rounds--;
+  const o = randomShape();
+  render(o);
+  expected = computeAnswer(o);
+  document.getElementById('nextKey').textContent = expected;
+
+  if(challengeMode.checked){
+    remaining=parseFloat(timeLimit.value);
+    clearInterval(timerInterval);
+    timerInterval=setInterval(()=>{
+      remaining-=0.1;
+      document.getElementById('timer').textContent=remaining.toFixed(2);
+      if(remaining<=0){
+        clearInterval(timerInterval);
+        return endGame(false,true);
+      }
+    },100);
+  }
+}
+
+function pick(key){
+  if(key===expected) startRound();
+  else endGame(false,false,expected);
+}
+
+document.getElementById('btnN').onclick=()=>pick('N');
+document.getElementById('btnX').onclick=()=>pick('X');
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='n'||e.key==='N') pick('N');
+  if(e.key==='x'||e.key==='X') pick('X');
+});
+
+function endGame(success,timeOut=false,correct=null){
+  clearInterval(timerInterval);
+  document.getElementById('gameArea').classList.add('hidden');
+  document.getElementById('resultCard').classList.remove('hidden');
+  if(success){
+    document.getElementById('resultTitle').textContent='✔ Terminé';
+    document.getElementById('resultText').textContent='Bravo !';
+  } else {
+    document.getElementById('resultTitle').textContent='❌ Mauvaise réponse';
+    document.getElementById('resultText').textContent=
+      timeOut?'Temps écoulé !':'La bonne réponse était : '+correct;
+  }
+}
+
+document.getElementById('startBtn').onclick=()=>{
+  document.getElementById('settings').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('gameArea').classList.remove('hidden');
+  rounds = parseInt(sequenceCount.value);
+  startRound();
+};
+
+document.getElementById('backBtn').onclick=()=>{
+  document.getElementById('settings').classList.remove('hidden');
+  document.getElementById('resultCard').classList.add('hidden');
+  document.getElementById('gameArea').classList.add('hidden');
+};
+</script>
+
+</body>
+</html>

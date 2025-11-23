@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NeuroTri — Formes logiques</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#2563eb" />
+  <style>
+    /* Simple CSS shapes for square and triangle */
+    .shape-box { width: 220px; height: 220px; display:flex; align-items:center; justify-content:center; margin: 0 auto; }
+    .square {
+      width: 140px; height: 140px; box-sizing: border-box;
+    }
+    .triangle {
+      width: 0; height: 0; border-left: 80px solid transparent; border-right: 80px solid transparent; border-bottom: 140px solid;
+    }
+    .empty { background: transparent; }
+    .filled { /* no-op, handled by color classes */ }
+    .blue-filled { background: #2563eb; }
+    .orange-filled { background: #fb923c; }
+    .blue-empty { border: 6px solid #2563eb; }
+    .orange-empty { border: 6px solid #fb923c; }
+    /* triangle empty: use border colors */
+    .triangle.blue-empty { border-bottom-color: transparent; box-shadow: inset 0 -6px 0 0 #2563eb; }
+    .triangle.orange-empty { border-bottom-color: transparent; box-shadow: inset 0 -6px 0 0 #fb923c; }
+    .triangle.blue-filled { border-bottom-color: #2563eb; border-left-color: transparent; border-right-color: transparent; }
+    .triangle.orange-filled { border-bottom-color: #fb923c; border-left-color: transparent; border-right-color: transparent; }
+    /* helper highlight */
+    .ring-target { box-shadow: 0 0 0 8px rgba(250,204,21,0.12), 0 0 0 2px rgba(250,204,21,0.4); }
+    /* responsive */
+    @media (max-width:640px){ .shape-box{ width:160px;height:160px } .triangle{ border-left:60px solid transparent; border-right:60px solid transparent; border-bottom:120px solid; } .square{ width:110px;height:110px } }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center bg-gray-50 text-gray-800 p-4 sm:p-6">
+
+  <h1 class="text-3xl sm:text-4xl font-bold text-blue-600 mt-4 mb-2 text-center">🧠 NeuroTri — Formes logiques</h1>
+  <p class="text-center text-sm sm:text-base mb-4">Règles : <strong>VIDE</strong> → N si BLEUE, X si ORANGE. <strong>REMPLI</strong> → N si CARRÉ, X si TRIANGLE. Utilisez le clavier (N / X).</p>
+
+  <!-- Settings panel -->
+  <div id="settings" class="w-full max-w-md bg-white p-4 sm:p-6 rounded-xl shadow-md space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="font-semibold">Mode Challenge</h3>
+        <div class="text-xs text-gray-500">Temps limité pour chaque forme</div>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="challengeMode" class="sr-only peer" checked>
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-red-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+
+    <div id="challengeTimeContainer" class="block">
+      <label class="block font-semibold">Temps limite (s)</label>
+      <input id="challengeSeconds" type="number" min="1" max="30" value="5" class="w-full rounded border p-2"/>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="font-semibold">Aide visuelle</h3>
+        <div class="text-xs text-gray-500">Afficher le badge indiquant la touche attendue</div>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="helperToggle" class="sr-only peer" checked>
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-teal-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="font-semibold">Effets sonores</h3>
+        <div class="text-xs text-gray-500">Click / Succès / Échec</div>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="soundToggle" class="sr-only peer" checked>
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-indigo-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+
+    <div class="flex gap-3">
+      <button id="startBtn" class="flex-1 bg-green-500 text-white py-2 rounded-lg">Démarrer</button>
+      <button id="retryBtn" class="flex-1 bg-blue-500 text-white py-2 rounded-lg">🔁 Rejouer</button>
+    </div>
+  </div>
+
+  <!-- Timer / Next badge -->
+  <div id="hud" class="w-full max-w-md mt-4 flex items-center justify-between">
+    <div id="timerBox" class="text-lg font-semibold">⏱ <span id="timer">0.00 s</span></div>
+    <div id="nextBadge" class="hidden">
+      <span class="inline-flex items-center px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold shadow-sm">Attendu: <strong id="nextKey" class="ml-2">N</strong></span>
+    </div>
+  </div>
+
+  <!-- Shape display -->
+  <div class="w-full max-w-md mt-6 bg-white p-6 rounded-xl shadow-md text-center">
+    <div id="shapeArea" class="shape-box my-4">
+      <!-- shape inserted here -->
+    </div>
+    <div id="properties" class="text-sm text-gray-600 mb-4">Propriétés : <span id="propText">—</span></div>
+
+    <div class="flex gap-3 justify-center">
+      <button id="btnN" class="px-6 py-3 bg-gray-100 rounded-lg border hover:bg-blue-500 hover:text-white">N</button>
+      <button id="btnX" class="px-6 py-3 bg-gray-100 rounded-lg border hover:bg-orange-500 hover:text-white">X</button>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="resultCard" class="hidden mt-6 bg-white p-4 rounded-xl shadow text-center">
+    <div id="resultTitle" class="text-2xl font-bold"></div>
+    <div id="resultTime" class="text-3xl font-extrabold text-blue-600 mt-2"></div>
+    <div class="mt-4 flex gap-3 justify-center">
+      <button id="backBtn" class="px-4 py-2 bg-gray-300 rounded">⚙️ Paramètres</button>
+    </div>
+  </div>
+
+  <!-- Sounds -->
+  <audio id="snd-click" src="sounds/click.wav" preload="auto"></audio>
+  <audio id="snd-success" src="sounds/success.wav" preload="auto"></audio>
+  <audio id="snd-fail" src="sounds/fail.wav" preload="auto"></audio>
+
+<script>
+/* ---------- State ---------- */
+const shapeArea = document.getElementById('shapeArea');
+const propText = document.getElementById('propText');
+const startBtn = document.getElementById('startBtn');
+const retryBtn = document.getElementById('retryBtn');
+const backBtn = document.getElementById('backBtn');
+const btnN = document.getElementById('btnN');
+const btnX = document.getElementById('btnX');
+const nextBadge = document.getElementById('nextBadge');
+const nextKey = document.getElementById('nextKey');
+const helperToggle = document.getElementById('helperToggle');
+const timerEl = document.getElementById('timer');
+const timerBox = document.getElementById('timerBox');
+const timerSecondsInput = document.getElementById('challengeSeconds');
+const challengeMode = document.getElementById('challengeMode');
+const soundToggle = document.getElementById('soundToggle');
+const resultCard = document.getElementById('resultCard');
+const resultTitle = document.getElementById('resultTitle');
+const resultTime = document.getElementById('resultTime');
+
+const sndClick = document.getElementById('snd-click');
+const sndSuccess = document.getElementById('snd-success');
+const sndFail = document.getElementById('snd-fail');
+
+let soundEnabled = soundToggle.checked;
+let helperEnabled = helperToggle.checked;
+let isChallenge = challengeMode.checked;
+let remaining = 0;
+let timerInterval = null;
+let startTime = null;
+let expectedKey = null;
+let totalRounds = 10;
+let currentRound = 0;
+let score = 0;
+
+/* ---------- Helpers ---------- */
+function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function playClick(){ if(soundEnabled && sndClick){ sndClick.currentTime=0; sndClick.play().catch(()=>{}); } }
+function playSuccess(){ if(soundEnabled && sndSuccess){ sndSuccess.currentTime=0; sndSuccess.play().catch(()=>{}); } }
+function playFail(){ if(soundEnabled && sndFail){ sndFail.currentTime=0; sndFail.play().catch(()=>{}); } }
+
+function showNextBadge(key){
+  if(helperEnabled){ nextKey.textContent = key; nextBadge.classList.remove('hidden'); } else { nextBadge.classList.add('hidden'); }
+}
+
+function hideNextBadge(){ nextBadge.classList.add('hidden'); }
+
+/* ---------- Shape rendering (CSS shapes) ---------- */
+function renderShape(obj){
+  shapeArea.innerHTML = '';
+  propText.textContent = `Forme: ${obj.shape.toUpperCase()} · Couleur: ${obj.color.toUpperCase()} · ${obj.fill.toUpperCase()}`;
+  const box = document.createElement('div');
+  box.className = obj.shape === 'square' ? 'square' : 'triangle';
+  // apply filled / empty + color classes
+  if(obj.shape === 'square'){
+    if(obj.fill === 'filled'){
+      box.classList.add(obj.color + '-filled');
+    } else {
+      box.classList.add(obj.color + '-empty');
+      box.style.background = 'transparent';
+    }
+  } else { // triangle
+    if(obj.fill === 'filled'){
+      box.classList.add(obj.shape, obj.color + '-filled');
+    } else {
+      // for empty triangle we simulate outline by making the triangle transparent and adding a pseudo-line via box-shadow
+      box.classList.add(obj.shape, obj.color + '-empty');
+      box.style.borderBottomColor = 'transparent';
+      // add a inner small triangle to simulate empty look
+      const inner = document.createElement('div');
+      inner.style.width = '0';
+      inner.style.height = '0';
+      inner.style.borderLeft = '68px solid transparent';
+      inner.style.borderRight = '68px solid transparent';
+      inner.style.borderBottom = '112px solid white';
+      inner.style.marginTop = '6px';
+      box.appendChild(inner);
+    }
+  }
+  box.style.transition = 'transform .12s';
+  shapeArea.appendChild(box);
+}
+
+/* ---------- Rules mapping ---------- */
+/*
+Règle n°1 : si la forme est VIDE,
+  appuyez : sur N si la forme est BLEUE
+            sur X si la forme est ORANGE.
+
+Règle n°2 : si la forme est REMPLIE,
+  appuyez : sur N si la forme est CARRÉE
+            sur X si la forme est TRIANGULAIRE.
+*/
+function computeExpected(obj){
+  if(obj.fill === 'empty'){
+    return obj.color === 'blue' ? 'N' : 'X';
+  } else {
+    return obj.shape === 'square' ? 'N' : 'X';
+  }
+}
+
+/* ---------- Game control ---------- */
+function randomShape(){
+  const shape = randChoice(['square','triangle']);
+  const color = randChoice(['blue','orange']);
+  const fill = randChoice(['filled','empty']);
+  return { shape, color, fill };
+}
+
+function startRound(){
+  // create shape, render, compute expected
+  const obj = randomShape();
+  renderShape(obj);
+  expectedKey = computeExpected(obj);
+  if(helperEnabled) showNextBadge(expectedKey); else hideNextBadge();
+  // visual highlight for training: add ring on shape if helper enabled
+  const box = shapeArea.firstElementChild;
+  if(box){
+    if(helperEnabled) box.classList.add('ring-target'); else box.classList.remove('ring-target');
+  }
+
+  // start timer
+  clearInterval(timerInterval);
+  timerInterval = null;
+  if(isChallenge){
+    remaining = parseFloat(timerSecondsInput.value) || 5;
+    timerEl.textContent = remaining.toFixed(2) + ' s';
+    timerInterval = setInterval(()=>{
+      remaining -= 0.1;
+      if(remaining <= 0){
+        clearInterval(timerInterval); timerInterval = null;
+        onFail('Temps écoulé');
+      }
+      timerEl.textContent = remaining.toFixed(2) + ' s';
+    },100);
+  } else {
+    startTime = Date.now();
+    timerInterval = setInterval(()=>{
+      timerEl.textContent = ((Date.now()-startTime)/1000).toFixed(2) + ' s';
+    },100);
+  }
+}
+
+function onSuccess(){
+  clearInterval(timerInterval); timerInterval = null;
+  playSuccess();
+  score++;
+  nextRound();
+}
+
+function onFail(reason){
+  clearInterval(timerInterval); timerInterval = null;
+  playFail();
+  showResult(false, reason);
+}
+
+function nextRound(){
+  currentRound++;
+  if(currentRound >= totalRounds){
+    // finish
+    const timeTaken = '—';
+    showResult(true, timeTaken);
+  } else {
+    // small delay and next
+    setTimeout(()=> startRound(), 400);
+  }
+}
+
+/* ---------- UI handlers ---------- */
+function handleChoice(key){
+  playClick();
+  const pressed = key.toUpperCase();
+  if(!expectedKey) return;
+  if(pressed === expectedKey){
+    onSuccess();
+  } else {
+    onFail('Mauvaise touche');
+  }
+}
+
+btnN.addEventListener('click', ()=> handleChoice('N'));
+btnX.addEventListener('click', ()=> handleChoice('X'));
+
+document.addEventListener('keydown', (ev)=>{
+  if(ev.key && (ev.key.toLowerCase() === 'n' || ev.key.toLowerCase() === 'x')){
+    handleChoice(ev.key);
+  }
+});
+
+startBtn.addEventListener('click', ()=>{
+  // reset
+  currentRound = 0; score = 0; resultCard.classList.add('hidden'); document.getElementById('settings').style.display='none';
+  isChallenge = challengeMode.checked;
+  helperEnabled = helperToggle.checked;
+  soundEnabled = soundToggle.checked;
+  totalRounds = 10;
+  startRound();
+});
+
+retryBtn.addEventListener('click', ()=>{
+  document.getElementById('settings').style.display='none';
+  currentRound = 0; score = 0; resultCard.classList.add('hidden');
+  isChallenge = challengeMode.checked;
+  helperEnabled = helperToggle.checked;
+  soundEnabled = soundToggle.checked;
+  startRound();
+});
+
+backBtn.addEventListener('click', ()=>{
+  resultCard.classList.add('hidden');
+  document.getElementById('settings').style.display='block';
+});
+
+/* update toggles live */
+helperToggle.addEventListener('change', ()=> { helperEnabled = helperToggle.checked; });
+soundToggle.addEventListener('change', ()=> { soundEnabled = soundToggle.checked; });
+challengeMode.addEventListener('change', ()=> { isChallenge = challengeMode.checked; challengeSeconds.style.display = isChallenge ? 'block':'none'; });
+
+function showResult(won, info){
+  document.getElementById('settings').style.display = 'none';
+  resultCard.classList.remove('hidden');
+  if(won){
+    resultTitle.textContent = '✅ Terminé';
+    resultTitle.className = 'text-2xl font-bold text-green-600';
+    resultTime.textContent = `Score : ${score} / ${totalRounds}`;
+  } else {
+    resultTitle.textContent = '❌ Échec';
+    resultTitle.className = 'text-2xl font-bold text-red-600';
+    resultTime.textContent = info;
+  }
+}
+
+/* init UI */
+hideNextBadge();
+timerEl.textContent = '0.00 s';
+</script>
+
+</body>
+</html>
