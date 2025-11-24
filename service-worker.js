@@ -3,9 +3,15 @@ const urlsToCache = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./click.wav",
-  "./success.wav",
-  "./fail.wav"
+  "./src/number.html",
+  "./src/alphabet.html",
+  "./src/words.html",
+  "./src/shapes.html",
+  "./src/privacy.html",
+  "./js/shared.js",
+  "./sounds/click.wav",
+  "./sounds/success.wav",
+  "./sounds/fail.wav"
 ];
 
 // Install

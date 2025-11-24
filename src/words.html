@@ -163,16 +163,16 @@
 
   <!-- Footer -->
   <footer class="w-full max-w-md text-center mx-auto mt-6 text-sm text-gray-600">
-    <a href="/privacy.html" class="text-blue-600 hover:underline">Politique de
+    <a href="privacy.html" class="text-blue-600 hover:underline">Politique de
       confidentialité</a>
     <span class="mx-2">•</span>
     <a href="/" class="text-blue-600 hover:underline">Retour</a>
   </footer>
 
   <!-- 🔊 SOUND EFFECTS -->
-  <audio id="snd-click" src="sounds/click.wav" preload="auto"></audio>
-  <audio id="snd-success" src="sounds/success.wav" preload="auto"></audio>
-  <audio id="snd-fail" src="sounds/fail.wav" preload="auto"></audio>
+  <audio id="snd-click" src="../sounds/click.wav" preload="auto"></audio>
+  <audio id="snd-success" src="../sounds/success.wav" preload="auto"></audio>
+  <audio id="snd-fail" src="../sounds/fail.wav" preload="auto"></audio>
 
   <script>
     /* ----------------- STATE ----------------- */
@@ -215,6 +215,25 @@
     const sndSuccess = document.getElementById("snd-success");
     const sndFail = document.getElementById("snd-fail");
     let soundEnabled = true;
+
+    // Unlock audio on first user interaction (required by some browsers)
+    let audioUnlocked = false;
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      if (sndClick) {
+        sndClick.volume = 0.01;
+        sndClick.play().then(() => {
+          sndClick.pause();
+          sndClick.currentTime = 0;
+          sndClick.volume = 1.0;
+        }).catch(() => {});
+      }
+    }
+
+    // Unlock audio on any user interaction
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
     document.getElementById("soundToggle").addEventListener("change", e => {
       soundEnabled = e.target.checked;
     });
@@ -343,9 +362,18 @@
 
     /* ----------------- CHECK WORD ----------------- */
     function checkWord(btn, word) {
-      if (soundEnabled) {
+      if (soundEnabled && sndClick) {
+        unlockAudio(); // Ensure audio is unlocked
         sndClick.currentTime = 0;
-        sndClick.play().catch(() => { });
+        const playPromise = sndClick.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(err => {
+            console.log('Sound play error:', err);
+            // Try to unlock and play again
+            unlockAudio();
+            sndClick.play().catch(() => {});
+          });
+        }
       }
 
       if (word === sorted[expected]) {
@@ -393,8 +421,8 @@
     document.getElementsByName('startCat').forEach(r => r.addEventListener('change', () => { startCategory = document.querySelector('input[name="startCat"]:checked').value; savePrefs(); }));
     helperToggle.addEventListener('change', () => { helperEnabled = helperToggle.checked; savePrefs(); });
     challengeCheckbox.addEventListener('change', () => { isChallenge = challengeCheckbox.checked; challengeTimeContainer.style.display = isChallenge ? 'block' : 'none'; savePrefs(); });
-    startBtn.addEventListener('click', () => startGame());
-    retryBtn.addEventListener('click', () => startGame());
+    startBtn.addEventListener('click', () => { unlockAudio(); startGame(); });
+    retryBtn.addEventListener('click', () => { unlockAudio(); startGame(); });
     backBtn.addEventListener('click', () => { resultCard.classList.add('hidden'); settings.style.display = 'block'; });
     document.getElementsByName('selectionMode').forEach(r => r.addEventListener('change', () => { alternateCategories = document.querySelector('input[name="selectionMode"]:checked').value === 'alternate'; savePrefs(); updateHeaderText(); }));
   </script>

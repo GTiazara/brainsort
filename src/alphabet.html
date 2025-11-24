@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NeuroTri — Alphabet</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="shared.js"></script>
-  <link rel="manifest" href="manifest.json">
+  <script src="../js/shared.js"></script>
+  <link rel="manifest" href="../manifest.json">
   <meta name="theme-color" content="#2563eb" />
-  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+  <link rel="apple-touch-icon" href="../icons/icon-192x192.png">
 </head>
 <body id="body" class="min-h-screen flex flex-col items-center bg-gray-50 text-gray-800 p-4 sm:p-6 transition-colors duration-500">
   <h1 class="text-3xl sm:text-4xl font-bold text-purple-600 mt-4 mb-2 text-center">🔤 NeuroTri — Alphabet</h1>
@@ -115,19 +115,19 @@
     <div class="mt-4 flex justify-center gap-3">
       <button id="alpha-retry" class="px-4 py-2 bg-indigo-500 text-white rounded">Rejouer</button>
       <button id="alpha-back" class="px-4 py-2 bg-gray-300 rounded">⚙️ Paramètres</button>
-      <a href="index.html" class="px-4 py-2 bg-gray-200 rounded">Accueil</a>
+      <a href="../index.html" class="px-4 py-2 bg-gray-200 rounded">Accueil</a>
     </div>
   </div>
 
   
 <!-- Sounds -->
-<audio id="click-sound" src="sounds/click.wav" preload="auto"></audio>
-<audio id="success-sound" src="sounds/success.wav"></audio>
-<audio id="fail-sound" src="sounds/fail.wav"></audio>
+<audio id="click-sound" src="../sounds/click.wav" preload="auto"></audio>
+<audio id="success-sound" src="../sounds/success.wav" preload="auto"></audio>
+<audio id="fail-sound" src="../sounds/fail.wav" preload="auto"></audio>
 
   <!-- Footer -->
 <footer class="w-full max-w-md text-center mx-auto mt-6 text-sm text-gray-600">
-  <a href="/privacy.html" class="text-blue-600 hover:underline">Politique de confidentialité</a>
+  <a href="privacy.html" class="text-blue-600 hover:underline">Politique de confidentialité</a>
   <span class="mx-2">•</span>
   <a href="/" class="text-blue-600 hover:underline">Retour</a>
 </footer>
@@ -150,6 +150,30 @@ const alphaSound = document.getElementById('alphaSound');
 const clickSnd = document.getElementById('click-sound');
 const successSnd = document.getElementById('success-sound');
 const failSnd = document.getElementById('fail-sound');
+
+// Debug: Check if audio elements are found
+if (!clickSnd) console.warn('click-sound audio element not found');
+if (!successSnd) console.warn('success-sound audio element not found');
+if (!failSnd) console.warn('fail-sound audio element not found');
+
+// Unlock audio on first user interaction (required by some browsers)
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  if (clickSnd) {
+    clickSnd.volume = 0.01;
+    clickSnd.play().then(() => {
+      clickSnd.pause();
+      clickSnd.currentTime = 0;
+      clickSnd.volume = 1.0;
+    }).catch(() => {});
+  }
+}
+
+// Unlock audio on any user interaction
+document.addEventListener('click', unlockAudio, { once: true });
+document.addEventListener('touchstart', unlockAudio, { once: true });
 const alphaMessage = document.getElementById('alpha-message');
 const alphaResult = document.getElementById('alpha-result');
 const alphaFinalTime = document.getElementById('alpha-final-time');
@@ -292,19 +316,31 @@ function startAlpha(){
 }
 
 function alphaCheck(btn, letter){
-  if(alphaSound.checked) { clickSnd.currentTime=0; clickSnd.play().catch(()=>{}); }
+  if(alphaSound && alphaSound.checked && clickSnd) { 
+    unlockAudio(); // Ensure audio is unlocked
+    clickSnd.currentTime=0; 
+    const playPromise = clickSnd.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.log('Sound play error:', err);
+        // Try to unlock and play again
+        unlockAudio();
+        clickSnd.play().catch(() => {});
+      });
+    }
+  }
   if(letter === alphaSorted[alphaExpected]){
     alphaExpected++;
     btn.classList.add('invisible');
     if(alphaExpected === alphaSorted.length){
       clearInterval(alphaTimerInterval); alphaTimerInterval=null;
-      if(alphaSound.checked) successSnd.play().catch(()=>{});
+      if(alphaSound && alphaSound.checked && successSnd) successSnd.play().catch(err => console.log('Sound play error:', err));
       const t = alphaChallenge.checked ? (parseFloat(alphaChallengeSeconds.value)-alphaRemaining).toFixed(2) : ((Date.now()-alphaStartTime)/1000).toFixed(2);
       alphaWin(t);
     }
   } else {
     clearInterval(alphaTimerInterval); alphaTimerInterval=null;
-    if(alphaSound.checked) failSnd.play().catch(()=>{});
+    if(alphaSound && alphaSound.checked && failSnd) failSnd.play().catch(err => console.log('Sound play error:', err));
     alphaMessage.innerHTML = '<span class="text-red-600">❌ Mauvaise lettre — recommence !</span>';
     showAlphaNext(alphaSorted[alphaExpected]);
     highlightAlphaExpected(true);
@@ -336,7 +372,7 @@ function alphaWin(time){
   alphaScore.textContent = `Lettre(s): ${alphaSorted.length}`;
 }
 
-alphaStart.addEventListener('click', startAlpha);
+alphaStart.addEventListener('click', () => { unlockAudio(); startAlpha(); });
 alphaRetry.addEventListener('click', startAlpha);
 
 // allow returning to settings from result (Paramètres)

@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NeuroTri</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="shared.js"></script>
+  <script src="../js/shared.js"></script>
 
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="../manifest.json">
   <meta name="theme-color" content="#2563eb" />
-  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+  <link rel="apple-touch-icon" href="../icons/icon-192x192.png">
   <script>
     if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-        navigator.serviceWorker.register("service-worker.js")
+        navigator.serviceWorker.register("../service-worker.js")
             .then(() => console.log("✅ Service Worker registered"))
             .catch(err => console.log("Service Worker failed:", err));
         });
@@ -226,15 +226,15 @@
  
 <!-- Footer -->
 <footer class="w-full max-w-md text-center mx-auto mt-6 text-sm text-gray-600">
-  <a href="/privacy.html" class="text-blue-600 hover:underline">Politique de confidentialité</a>
+  <a href="privacy.html" class="text-blue-600 hover:underline">Politique de confidentialité</a>
   <span class="mx-2">•</span>
   <a href="/" class="text-blue-600 hover:underline">Retour</a>
 </footer>
 
 <!-- Sounds -->
-<audio id="click-sound" src="sounds/click.wav" preload="auto"></audio>
-<audio id="success-sound" src="sounds/success.wav"></audio>
-<audio id="fail-sound" src="sounds/fail.wav"></audio>
+<audio id="click-sound" src="../sounds/click.wav" preload="auto"></audio>
+<audio id="success-sound" src="../sounds/success.wav" preload="auto"></audio>
+<audio id="fail-sound" src="../sounds/fail.wav" preload="auto"></audio>
 
 <script>
 /* ---------- Refs ---------- */
@@ -259,6 +259,30 @@ const clickSound = document.getElementById("click-sound");
 const successSound = document.getElementById("success-sound");
 const failSound = document.getElementById("fail-sound");
 const soundToggle = document.getElementById("soundToggle");
+
+// Debug: Check if audio elements are found
+if (!clickSound) console.warn('click-sound audio element not found');
+if (!successSound) console.warn('success-sound audio element not found');
+if (!failSound) console.warn('fail-sound audio element not found');
+
+// Unlock audio on first user interaction (required by some browsers)
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  if (clickSound) {
+    clickSound.volume = 0.01;
+    clickSound.play().then(() => {
+      clickSound.pause();
+      clickSound.currentTime = 0;
+      clickSound.volume = 1.0;
+    }).catch(() => {});
+  }
+}
+
+// Unlock audio on any user interaction
+document.addEventListener('click', unlockAudio, { once: true });
+document.addEventListener('touchstart', unlockAudio, { once: true });
 const challengeCheckbox = document.getElementById("challengeMode");
 const challengeTimeContainer = document.getElementById("challengeTimeContainer");
 const nextBadge = document.getElementById("next-badge");
@@ -508,8 +532,8 @@ helperToggle.addEventListener("change", ()=>{
 });
 
 /* ---------- Start/retry/back ---------- */
-startBtn.addEventListener("click", startGame);
-retryBtn.addEventListener("click", startGame);
+startBtn.addEventListener("click", () => { unlockAudio(); startGame(); });
+retryBtn.addEventListener("click", () => { unlockAudio(); startGame(); });
 backBtn.addEventListener("click", ()=>{ resultCard.classList.add("hidden"); settings.style.display="block" });
 
 /* ---------- Game logic ---------- */
@@ -595,7 +619,19 @@ function startGame(){
 }
 
 function checkNumber(btn,num){
-  if (soundEnabled) { clickSound.currentTime = 0; clickSound.play().catch(()=>{}); }
+  if (soundEnabled && clickSound) { 
+    unlockAudio(); // Ensure audio is unlocked
+    clickSound.currentTime = 0; 
+    const playPromise = clickSound.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.log('Sound play error:', err);
+        // Try to unlock and play again
+        unlockAudio();
+        clickSound.play().catch(() => {});
+      });
+    }
+  }
   if(num === sorted[expected]){
     expected++;
     btn.classList.add("invisible");
@@ -614,13 +650,13 @@ function checkNumber(btn,num){
     }
     if(expected === sorted.length){
       clearInterval(timerInterval); timerInterval = null;
-      if (soundEnabled) successSound.play().catch(()=>{});
+      if (soundEnabled && successSound) successSound.play().catch(err => console.log('Sound play error:', err));
       const time = isChallenge ? (parseFloat(document.getElementById("challengeTime").value)-remainingTime).toFixed(2) : ((Date.now()-startTime)/1000).toFixed(2);
       showResult(time);
     }
   } else {
     clearInterval(timerInterval); timerInterval = null;
-    if (soundEnabled) failSound.play().catch(()=>{});
+    if (soundEnabled && failSound) failSound.play().catch(err => console.log('Sound play error:', err));
     message.innerHTML = '<span class="text-red-600">❌ Mauvais ordre ! Redémarrage...</span>';
     // On failure: show the next expected number as a badge and highlight it
     if(expected < sorted.length){
@@ -654,7 +690,7 @@ function showResult(time){
 }
 
 function failGame(){
-  if (soundEnabled) failSound.play().catch(()=>{});
+  if (soundEnabled && failSound) failSound.play().catch(err => console.log('Sound play error:', err));
   message.innerHTML = '<span class="text-red-600 font-bold">⏰ Temps écoulé ! Vous avez perdu.</span>';
   numbersContainer.innerHTML = "";
 }
