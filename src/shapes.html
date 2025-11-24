@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NeuroTri — Formes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="../js/shared.js"></script>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#2563eb" />
+  <link rel="apple-touch-icon" href="../icons/icon-192x192.png">
+  <style>
+    .shape-box {
+      width: 280px;
+      height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: auto;
+      position: relative;
+    }
+    .pattern-striped {
+      fill: url(#stripes);
+    }
+  </style>
+</head>
+<body id="body" class="min-h-screen bg-gray-50 text-gray-800 p-4 sm:p-6 transition-colors duration-500">
+  <h1 class="text-3xl sm:text-4xl font-bold text-green-600 mt-4 mb-2 text-center">🔺 NeuroTri — Formes</h1>
+  <p class="text-center text-sm sm:text-base mb-4">Identifie la règle logique et clique N ou X selon la forme affichée.</p>
+
+  <div id="settings" class="max-w-md mx-auto bg-white p-4 sm:p-6 rounded-xl shadow-md space-y-4 transition-colors duration-500">
+    
+    <div>
+      <label class="font-semibold mb-2 block">Type de règle</label>
+      <select id="ruleMode" class="w-full border rounded p-2">
+        <option value="fill">Règle remplissage</option>
+        <option value="color">Règle couleur</option>
+        <option value="shapeColor">Règle forme + couleur</option>
+        <option value="size">Règle taille</option>
+        <option value="position">Règle position</option>
+        <option value="orientation">Règle orientation</option>
+        <option value="pattern">Règle motif</option>
+        <option value="sequential">Règle séquentielle</option>
+        <option value="complex">Règle complexe (forme ET couleur)</option>
+        <option value="parity">Règle parité (carré=impair, triangle=pair)</option>
+      </select>
+      <div id="ruleDescription" class="text-sm text-gray-700 mt-2 p-2 bg-gray-100 rounded"></div>
+    </div>
+
+    <div>
+      <label class="font-semibold mb-2 block">Difficulté</label>
+      <div class="flex gap-2">
+        <button class="difficulty-btn flex-1 py-2 bg-green-200 text-green-800 rounded text-sm sm:text-base">Facile</button>
+        <button class="difficulty-btn flex-1 py-2 bg-yellow-200 text-yellow-800 rounded text-sm sm:text-base">Moyen</button>
+        <button class="difficulty-btn flex-1 py-2 bg-red-200 text-red-800 rounded text-sm sm:text-base">Difficile</button>
+      </div>
+    </div>
+
+    <div>
+      <label class="font-semibold mb-2 block">Nombre de séquences</label>
+      <input id="sequenceCount" type="number" min="5" max="50" value="15" class="w-full border rounded p-2">
+    </div>
+
+    <div class="flex items-center justify-between">
+      <span class="font-semibold">Mode Challenge</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="challengeMode" class="sr-only peer" checked>
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-red-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+
+    <div id="challengeTimeContainer">
+      <label class="font-semibold mb-2 block">Temps limite par séquence (s)</label>
+      <input id="timeLimit" type="number" min="1" step="0.5" max="10" value="3" class="w-full border rounded p-2">
+    </div>
+
+    <div class="flex items-center justify-between">
+      <span class="font-semibold">Aide visuelle</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="helperToggle" class="sr-only peer">
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-indigo-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <span class="font-semibold">Sons</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="soundToggle" class="sr-only peer" checked>
+        <div class="w-14 h-7 bg-gray-300 rounded-full peer-checked:bg-indigo-500 transition-all duration-300"></div>
+        <div class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 peer-checked:translate-x-7"></div>
+      </label>
+    </div>
+
+    <button id="startBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold">Démarrer</button>
+  </div>
+
+  <div id="hud" class="hidden max-w-md mx-auto mt-4 flex justify-between items-center">
+    <div class="font-semibold">⏱ <span id="timer">0.00</span>s</div>
+    <div class="font-semibold">Séquence: <span id="roundCounter">0</span>/<span id="totalRounds">0</span></div>
+    <div id="nextBadge" class="hidden bg-yellow-100 px-3 py-1 rounded-full text-yellow-800">
+      Attendu : <strong id="nextKey"></strong>
+    </div>
+  </div>
+
+  <div id="gameArea" class="hidden max-w-md mx-auto bg-white p-6 mt-4 rounded-xl shadow text-center transition-colors duration-500">
+    <div id="shapeArea" class="shape-box"></div>
+    <p id="message" class="text-sm text-gray-600 mt-2"></p>
+    <div class="flex gap-3 justify-center mt-4">
+      <button class="px-8 py-4 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl shadow-md transition active:scale-95" id="btnN">N</button>
+      <button class="px-8 py-4 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold text-xl shadow-md transition active:scale-95" id="btnX">X</button>
+    </div>
+  </div>
+
+  <div id="resultCard" class="hidden max-w-md mx-auto mt-6 bg-white p-4 sm:p-6 rounded-xl shadow text-center transition-colors duration-500">
+    <div id="resultTitle" class="text-2xl font-bold"></div>
+    <p id="resultText" class="text-lg mt-2"></p>
+    <div id="scoreDisplay" class="text-xl font-semibold text-purple-600 mt-2"></div>
+    <div class="mt-4 flex justify-center gap-3">
+      <button id="retryBtn" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded">🔁 Rejouer</button>
+      <button id="backBtn" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded">⚙️ Paramètres</button>
+      <a href="../index.html" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">Accueil</a>
+    </div>
+  </div>
+
+  <footer class="w-full max-w-md text-center mx-auto mt-6 text-sm text-gray-600">
+    <a href="privacy.html" class="text-blue-600 hover:underline">Politique de confidentialité</a>
+  </footer>
+
+  <!-- Sounds -->
+  <audio id="click-sound" src="../sounds/click.wav" preload="auto"></audio>
+  <audio id="success-sound" src="../sounds/success.wav" preload="auto"></audio>
+  <audio id="fail-sound" src="../sounds/fail.wav" preload="auto"></audio>
+
+  <script>
+    const ruleMode = document.getElementById('ruleMode');
+    const ruleDescription = document.getElementById('ruleDescription');
+    const sequenceCount = document.getElementById('sequenceCount');
+    const timeLimit = document.getElementById('timeLimit');
+    const challengeMode = document.getElementById('challengeMode');
+    const challengeTimeContainer = document.getElementById('challengeTimeContainer');
+    const helperToggle = document.getElementById('helperToggle');
+    const soundToggle = document.getElementById('soundToggle');
+    const startBtn = document.getElementById('startBtn');
+    const retryBtn = document.getElementById('retryBtn');
+    const backBtn = document.getElementById('backBtn');
+    const timerEl = document.getElementById('timer');
+    const roundCounter = document.getElementById('roundCounter');
+    const totalRoundsEl = document.getElementById('totalRounds');
+    const nextBadge = document.getElementById('nextBadge');
+    const nextKey = document.getElementById('nextKey');
+    const message = document.getElementById('message');
+    const body = document.getElementById('body');
+    const settings = document.getElementById('settings');
+    const gameArea = document.getElementById('gameArea');
+    const resultCard = document.getElementById('resultCard');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultText = document.getElementById('resultText');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+
+    const clickSound = document.getElementById('click-sound');
+    const successSound = document.getElementById('success-sound');
+    const failSound = document.getElementById('fail-sound');
+
+    // Unlock audio on first user interaction
+    let audioUnlocked = false;
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      if (clickSound) {
+        clickSound.volume = 0.01;
+        clickSound.play().then(() => {
+          clickSound.pause();
+          clickSound.currentTime = 0;
+          clickSound.volume = 1.0;
+        }).catch(() => {});
+      }
+    }
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
+    let expected = 'N';
+    let remaining = 0;
+    let rounds = 0;
+    let totalRounds = 0;
+    let timerInterval = null;
+    let startTime = null;
+    let previousShape = null;
+    let selectedDiff = 100;
+    let soundEnabled = true;
+    let helperEnabled = false;
+    let isChallenge = true;
+
+    // Enhanced rules with difficulty
+    const rules = {
+      fill: (s, diff) => {
+        if (diff === 50) return s.fill === 'empty' ? 'N' : 'X';
+        if (diff === 100) return s.fill === 'empty' ? (s.color === 'blue' ? 'N' : 'X') : (s.shape === 'square' ? 'N' : 'X');
+        return s.fill === 'empty' ? (s.color === 'blue' && s.size === 'large' ? 'N' : 'X') : (s.shape === 'square' && s.color === 'blue' ? 'N' : 'X');
+      },
+      color: (s, diff) => {
+        if (diff === 50) return s.color === 'blue' ? 'N' : 'X';
+        if (diff === 100) return s.color === 'blue' ? (s.shape === 'square' ? 'N' : 'X') : (s.fill === 'empty' ? 'N' : 'X');
+        return s.color === 'blue' ? (s.shape === 'square' && s.size === 'large' ? 'N' : 'X') : (s.fill === 'empty' && s.pattern === 'striped' ? 'N' : 'X');
+      },
+      shapeColor: (s, diff) => {
+        if (diff === 50) return s.shape === 'square' && s.color === 'blue' ? 'N' : 'X';
+        if (diff === 100) return s.shape === 'square' && s.color === 'blue' ? 'N' : s.shape === 'triangle' && s.color === 'orange' ? 'N' : 'X';
+        return (s.shape === 'square' && s.color === 'blue' && s.fill === 'filled') || (s.shape === 'triangle' && s.color === 'orange' && s.size === 'large') ? 'N' : 'X';
+      },
+      size: (s, diff) => {
+        if (diff === 50) return s.size === 'large' ? 'N' : 'X';
+        if (diff === 100) return s.size === 'large' ? (s.color === 'blue' ? 'N' : 'X') : (s.fill === 'empty' ? 'N' : 'X');
+        return s.size === 'large' ? (s.shape === 'square' && s.color === 'blue' ? 'N' : 'X') : (s.shape === 'triangle' && s.fill === 'empty' ? 'N' : 'X');
+      },
+      position: (s, diff) => {
+        if (diff === 50) return s.position === 'left' ? 'N' : 'X';
+        if (diff === 100) return s.position === 'left' ? 'N' : s.position === 'center' ? (s.color === 'blue' ? 'N' : 'X') : 'X';
+        return s.position === 'left' ? (s.shape === 'square' ? 'N' : 'X') : s.position === 'center' ? (s.color === 'blue' && s.fill === 'filled' ? 'N' : 'X') : 'X';
+      },
+      orientation: (s, diff) => {
+        if (diff === 50) return s.orientation === 'up' ? 'N' : 'X';
+        if (diff === 100) return s.orientation === 'up' ? 'N' : s.orientation === 'right' ? (s.color === 'blue' ? 'N' : 'X') : 'X';
+        return s.orientation === 'up' ? (s.shape === 'square' ? 'N' : 'X') : s.orientation === 'right' ? (s.color === 'blue' && s.size === 'large' ? 'N' : 'X') : 'X';
+      },
+      pattern: (s, diff) => {
+        if (diff === 50) return s.pattern === 'striped' ? 'N' : 'X';
+        if (diff === 100) return s.pattern === 'striped' ? (s.color === 'blue' ? 'N' : 'X') : (s.fill === 'empty' ? 'N' : 'X');
+        return s.pattern === 'striped' ? (s.shape === 'square' && s.color === 'blue' ? 'N' : 'X') : (s.shape === 'triangle' && s.fill === 'empty' ? 'N' : 'X');
+      },
+      sequential: (s, prev, diff) => {
+        if (!prev) return 'N';
+        if (diff === 50) return prev.shape === 'square' ? (s.shape === 'triangle' ? 'N' : 'X') : (s.shape === 'square' ? 'N' : 'X');
+        if (diff === 100) return prev.shape === 'square' ? (s.shape === 'triangle' && s.color === 'blue' ? 'N' : 'X') : (s.shape === 'square' && s.color === 'orange' ? 'N' : 'X');
+        return prev.shape === 'square' ? (s.shape === 'triangle' && s.color === 'blue' && s.size === 'large' ? 'N' : 'X') : (s.shape === 'square' && s.color === 'orange' && s.fill === 'filled' ? 'N' : 'X');
+      },
+      complex: (s, diff) => {
+        if (diff === 50) return (s.shape === 'square' && s.color === 'blue') ? 'N' : 'X';
+        if (diff === 100) return (s.shape === 'square' && s.color === 'blue' && s.fill === 'filled') || (s.shape === 'triangle' && s.color === 'orange' && s.size === 'large') ? 'N' : 'X';
+        return (s.shape === 'square' && s.color === 'blue' && s.fill === 'filled' && s.size === 'large' && s.pattern === 'striped') || (s.shape === 'triangle' && s.color === 'orange' && s.fill === 'empty' && s.position === 'left') ? 'N' : 'X';
+      },
+      parity: (s, diff) => {
+        if (diff === 50) return s.shape === 'square' ? 'N' : 'X';
+        if (diff === 100) return s.shape === 'square' ? (s.color === 'blue' ? 'N' : 'X') : (s.color === 'orange' ? 'N' : 'X');
+        return s.shape === 'square' ? (s.color === 'blue' && s.fill === 'filled' ? 'N' : 'X') : (s.color === 'orange' && s.size === 'large' ? 'N' : 'X');
+      }
+    };
+
+    // Rule descriptions
+    function updateRuleText() {
+      const descriptions = {
+        fill: diff => diff === 50 ? 'VIDE = N, REMPLI = X' : diff === 100 ? 'VIDE → (Bleu=N / Orange=X)<br>REMPLI → (Carré=N / Triangle=X)' : 'VIDE → (Bleu ET Grand = N)<br>REMPLI → (Carré ET Bleu = N)',
+        color: diff => diff === 50 ? 'Bleu = N, Orange = X' : diff === 100 ? 'Bleu → (Carré=N / Triangle=X)<br>Orange → (Vide=N / Rempli=X)' : 'Bleu → (Carré ET Grand = N)<br>Orange → (Vide ET Rayé = N)',
+        shapeColor: diff => diff === 50 ? 'Carré BLEU = N' : diff === 100 ? 'Carré BLEU = N<br>Triangle ORANGE = N<br>Autre = X' : 'Carré BLEU REMPLI = N<br>Triangle ORANGE GRAND = N',
+        size: diff => diff === 50 ? 'Grand = N, Petit = X' : diff === 100 ? 'Grand → (Bleu=N / Orange=X)<br>Petit → (Vide=N / Rempli=X)' : 'Grand → (Carré ET Bleu = N)<br>Petit → (Triangle ET Vide = N)',
+        position: diff => diff === 50 ? 'Gauche = N' : diff === 100 ? 'Gauche = N<br>Centre → (Bleu=N / Orange=X)<br>Droite = X' : 'Gauche → (Carré=N / Triangle=X)<br>Centre → (Bleu ET Rempli = N)',
+        orientation: diff => diff === 50 ? 'Haut = N' : diff === 100 ? 'Haut = N<br>Droite → (Bleu=N / Orange=X)' : 'Haut → (Carré=N / Triangle=X)<br>Droite → (Bleu ET Grand = N)',
+        pattern: diff => diff === 50 ? 'Rayé = N, Uni = X' : diff === 100 ? 'Rayé → (Bleu=N / Orange=X)<br>Uni → (Vide=N / Rempli=X)' : 'Rayé → (Carré ET Bleu = N)<br>Uni → (Triangle ET Vide = N)',
+        sequential: diff => diff === 50 ? 'Carré→Triangle = N' : diff === 100 ? 'Carré→Triangle Bleu = N<br>Triangle→Carré Orange = N' : 'Carré→Triangle Bleu Grand = N<br>Triangle→Carré Orange Rempli = N',
+        complex: diff => diff === 50 ? 'Carré BLEU = N' : diff === 100 ? 'Carré BLEU REMPLI = N<br>Triangle ORANGE GRAND = N' : 'Carré BLEU REMPLI GRAND RAYÉ = N<br>Triangle ORANGE VIDE GAUCHE = N',
+        parity: diff => diff === 50 ? 'Carré = N, Triangle = X' : diff === 100 ? 'Carré → (Bleu=N / Orange=X)<br>Triangle → (Orange=N / Bleu=X)' : 'Carré → (Bleu Rempli = N)<br>Triangle → (Orange Grand = N)'
+      };
+      ruleDescription.innerHTML = descriptions[ruleMode.value] ? descriptions[ruleMode.value](selectedDiff) : '';
+    }
+
+    // Generate random shape
+    function randomShape(prev = null) {
+      const shapes = ['square', 'triangle'];
+      const colors = ['blue', 'orange'];
+      const fills = ['filled', 'empty'];
+      const sizes = ['small', 'large'];
+      const positions = ['left', 'center', 'right'];
+      const orientations = ['up', 'right', 'down', 'left'];
+      const patterns = ['solid', 'striped'];
+      return {
+        shape: shapes[Math.floor(Math.random() * shapes.length)],
+        color: colors[Math.floor(Math.random() * colors.length)],
+        fill: fills[Math.floor(Math.random() * fills.length)],
+        size: sizes[Math.floor(Math.random() * sizes.length)],
+        position: positions[Math.floor(Math.random() * positions.length)],
+        orientation: orientations[Math.floor(Math.random() * orientations.length)],
+        pattern: patterns[Math.floor(Math.random() * patterns.length)],
+        previous: prev
+      };
+    }
+
+    // Compute answer
+    function computeAnswer(shape) {
+      const rule = rules[ruleMode.value];
+      return ruleMode.value === 'sequential' ? rule(shape, previousShape, selectedDiff) : rule(shape, selectedDiff);
+    }
+
+    // Render shape with all attributes
+    function render(shape) {
+      previousShape = shape;
+      const area = document.getElementById('shapeArea');
+      area.innerHTML = '';
+      const svgNS = "http://www.w3.org/2000/svg";
+      let svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("width", "280");
+      svg.setAttribute("height", "280");
+      svg.setAttribute("viewBox", "0 0 280 280");
+
+      // Add pattern definition for striped
+      const defs = document.createElementNS(svgNS, "defs");
+      const pattern = document.createElementNS(svgNS, "pattern");
+      pattern.setAttribute("id", "stripes");
+      pattern.setAttribute("patternUnits", "userSpaceOnUse");
+      pattern.setAttribute("width", "10");
+      pattern.setAttribute("height", "10");
+      const line = document.createElementNS(svgNS, "line");
+      line.setAttribute("x1", "0");
+      line.setAttribute("y1", "0");
+      line.setAttribute("x2", "10");
+      line.setAttribute("y2", "10");
+      line.setAttribute("stroke", shape.color === 'blue' ? '#2563eb' : '#fb923c');
+      line.setAttribute("stroke-width", "2");
+      pattern.appendChild(line);
+      defs.appendChild(pattern);
+      svg.appendChild(defs);
+
+      let size = shape.size === 'large' ? 120 : 80;
+      let x = 140 - size / 2;
+      let y = 140 - size / 2;
+
+      // Position adjustment
+      if (shape.position === 'left') x = 20;
+      else if (shape.position === 'right') x = 280 - size - 20;
+      else x = 140 - size / 2;
+
+      // Orientation
+      let transform = '';
+      const centerX = x + size / 2;
+      const centerY = y + size / 2;
+      if (shape.orientation === 'right') transform = `rotate(90 ${centerX} ${centerY})`;
+      else if (shape.orientation === 'down') transform = `rotate(180 ${centerX} ${centerY})`;
+      else if (shape.orientation === 'left') transform = `rotate(270 ${centerX} ${centerY})`;
+
+      const fillColor = shape.color === 'blue' ? '#2563eb' : '#fb923c';
+      const strokeColor = shape.color === 'blue' ? '#2563eb' : '#fb923c';
+
+      // Square
+      if (shape.shape === 'square') {
+        let rect = document.createElementNS(svgNS, "rect");
+        rect.setAttribute("x", x);
+        rect.setAttribute("y", y);
+        rect.setAttribute("width", size);
+        rect.setAttribute("height", size);
+        
+        if (shape.fill === 'filled') {
+          if (shape.pattern === 'striped') {
+            rect.setAttribute("fill", "url(#stripes)");
+            rect.setAttribute("stroke", strokeColor);
+            rect.setAttribute("stroke-width", "3");
+          } else {
+            rect.setAttribute("fill", fillColor);
+            rect.setAttribute("stroke", "none");
+          }
+        } else {
+          rect.setAttribute("fill", "transparent");
+          rect.setAttribute("stroke", strokeColor);
+          rect.setAttribute("stroke-width", "6");
+        }
+        
+        if (transform) rect.setAttribute("transform", transform);
+        svg.appendChild(rect);
+      }
+
+      // Triangle
+      if (shape.shape === 'triangle') {
+        let tri = document.createElementNS(svgNS, "polygon");
+        const scale = size / 120;
+        const points = `${x + 60 * scale},${y} ${x},${y + 104 * scale} ${x + 120 * scale},${y + 104 * scale}`;
+        tri.setAttribute("points", points);
+        
+        if (shape.fill === 'filled') {
+          if (shape.pattern === 'striped') {
+            tri.setAttribute("fill", "url(#stripes)");
+            tri.setAttribute("stroke", strokeColor);
+            tri.setAttribute("stroke-width", "3");
+          } else {
+            tri.setAttribute("fill", fillColor);
+            tri.setAttribute("stroke", "none");
+          }
+        } else {
+          tri.setAttribute("fill", "transparent");
+          tri.setAttribute("stroke", strokeColor);
+          tri.setAttribute("stroke-width", "6");
+        }
+        
+        if (transform) tri.setAttribute("transform", transform);
+        svg.appendChild(tri);
+      }
+
+      area.appendChild(svg);
+      message.textContent = '';
+    }
+
+    // Start round
+    function startRound() {
+      if (rounds <= 0) {
+        const totalTime = isChallenge ? (totalRounds * parseFloat(timeLimit.value) - remaining) : ((Date.now() - startTime) / 1000);
+        return endGame(true, totalTime);
+      }
+      rounds--;
+      roundCounter.textContent = totalRounds - rounds;
+      const shape = randomShape(previousShape);
+      render(shape);
+      expected = computeAnswer(shape);
+      
+      if (helperEnabled) {
+        nextKey.textContent = expected;
+        nextBadge.classList.remove('hidden');
+      } else {
+        nextBadge.classList.add('hidden');
+      }
+
+      if (isChallenge) {
+        remaining = parseFloat(timeLimit.value);
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          remaining -= 0.1;
+          timerEl.textContent = remaining.toFixed(2);
+          if (remaining <= 0) {
+            clearInterval(timerInterval);
+            return endGame(false, 0, true);
+          }
+        }, 100);
+      } else {
+        if (!startTime) startTime = Date.now();
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          const elapsed = (Date.now() - startTime) / 1000;
+          timerEl.textContent = elapsed.toFixed(2);
+        }, 100);
+      }
+    }
+
+    function pick(key) {
+      unlockAudio();
+      if (soundEnabled && clickSound) {
+        clickSound.currentTime = 0;
+        clickSound.play().catch(err => console.log('Sound play error:', err));
+      }
+      
+      if (key === expected) {
+        if (soundEnabled && successSound) {
+          successSound.currentTime = 0;
+          successSound.play().catch(() => {});
+        }
+        startRound();
+      } else {
+        if (soundEnabled && failSound) {
+          failSound.currentTime = 0;
+          failSound.play().catch(() => {});
+        }
+        const totalTime = isChallenge ? (totalRounds * parseFloat(timeLimit.value) - remaining) : ((Date.now() - startTime) / 1000);
+        endGame(false, totalTime, false, expected);
+      }
+    }
+
+    document.getElementById('btnN').onclick = () => pick('N');
+    document.getElementById('btnX').onclick = () => pick('X');
+    document.addEventListener('keydown', e => {
+      if (e.key === 'n' || e.key === 'N') pick('N');
+      if (e.key === 'x' || e.key === 'X') pick('X');
+    });
+
+    function endGame(success, totalTime, timeOut = false, correct = null) {
+      clearInterval(timerInterval);
+      gameArea.classList.add('hidden');
+      resultCard.classList.remove('hidden');
+      
+      if (success) {
+        resultTitle.textContent = '✅ Terminé !';
+        resultText.textContent = `Temps total : ${totalTime.toFixed(2)}s`;
+        const score = window.brainSort ? window.brainSort.calculateScore(totalTime, totalRounds, selectedDiff) : Math.round(1000 / Math.max(totalTime, 0.1));
+        scoreDisplay.textContent = `Score : ${score}`;
+        
+        if (window.brainSort) {
+          window.brainSort.saveScore({
+            name: "Player",
+            score: score,
+            time: totalTime,
+            elements: totalRounds,
+            difficulty: selectedDiff,
+            date: new Date()
+          });
+        }
+      } else {
+        resultTitle.textContent = '❌ Échec';
+        resultText.textContent = timeOut ? 'Temps écoulé !' : `La bonne réponse était : ${correct}`;
+        scoreDisplay.textContent = '';
+      }
+    }
+
+    // Difficulty buttons
+    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.difficulty-btn').forEach(b => {
+          b.classList.remove('ring-2', 'ring-blue-500');
+        });
+        btn.classList.add('ring-2', 'ring-blue-500');
+        const text = btn.textContent.trim();
+        selectedDiff = text === 'Facile' ? 50 : text === 'Moyen' ? 100 : 999;
+      });
+    });
+
+    // Set default difficulty
+    document.querySelector('.difficulty-btn').classList.add('ring-2', 'ring-blue-500');
+
+    // Challenge mode toggle
+    challengeMode.addEventListener('change', () => {
+      isChallenge = challengeMode.checked;
+      challengeTimeContainer.style.display = isChallenge ? 'block' : 'none';
+    });
+
+    // Helper toggle
+    helperToggle.addEventListener('change', () => {
+      helperEnabled = helperToggle.checked;
+      if (!helperEnabled) nextBadge.classList.add('hidden');
+    });
+
+    // Sound toggle
+    soundToggle.addEventListener('change', () => {
+      soundEnabled = soundToggle.checked;
+    });
+
+    // Start button
+    startBtn.addEventListener('click', () => {
+      unlockAudio();
+      settings.classList.add('hidden');
+      document.getElementById('hud').classList.remove('hidden');
+      gameArea.classList.remove('hidden');
+      rounds = parseInt(sequenceCount.value);
+      totalRounds = rounds;
+      totalRoundsEl.textContent = totalRounds;
+      roundCounter.textContent = '0';
+      previousShape = null;
+      startTime = null;
+      startRound();
+    });
+
+    // Retry button
+    retryBtn.addEventListener('click', () => {
+      unlockAudio();
+      resultCard.classList.add('hidden');
+      gameArea.classList.remove('hidden');
+      rounds = parseInt(sequenceCount.value);
+      totalRounds = rounds;
+      totalRoundsEl.textContent = totalRounds;
+      roundCounter.textContent = '0';
+      previousShape = null;
+      startTime = null;
+      startRound();
+    });
+
+    // Back button
+    backBtn.addEventListener('click', () => {
+      settings.classList.remove('hidden');
+      resultCard.classList.add('hidden');
+      gameArea.classList.add('hidden');
+      document.getElementById('hud').classList.add('hidden');
+      clearInterval(timerInterval);
+    });
+
+    // Initialize rule description
+    updateRuleText();
+    ruleMode.addEventListener('change', updateRuleText);
+
+    // Load preferences
+    if (window.brainSort) {
+      const prefs = window.brainSort.loadPrefsObj();
+      if (prefs) {
+        if (prefs.selectedDiff) selectedDiff = prefs.selectedDiff;
+        if (prefs.helperEnabled !== undefined) helperToggle.checked = prefs.helperEnabled;
+        if (prefs.soundEnabled !== undefined) soundToggle.checked = prefs.soundEnabled;
+        if (prefs.selectedTheme) window.brainSort.applyTheme(prefs.selectedTheme, { bodySelector: '#body', panelsSelector: '#settings, #gameArea, #resultCard' });
+      }
+    }
+  </script>
+</body>
+</html>
